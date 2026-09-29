@@ -13,6 +13,7 @@ export const Route = createFileRoute("/pedido/$orderId")({
       { property: "og:title", content: "Seu pedido — Massa do Lucão" },
       { property: "og:description", content: "Status do pedido." },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),

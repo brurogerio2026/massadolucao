@@ -714,6 +714,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_approved_payment: {
+        Args: {
+          p_amount: number
+          p_order_id: string
+          p_payment_method: string
+          p_provider_payment_id: string
+          p_raw: Json
+          p_status: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"

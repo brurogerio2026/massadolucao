@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- All admin reads and mutations go through authenticated server functions that verify the `admin` role; route visibility is not the security boundary.
