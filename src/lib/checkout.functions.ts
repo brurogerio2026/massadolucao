@@ -238,7 +238,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select(
-        "id, order_number, total, subtotal, shipping, discount, payment_status, order_status, tracking_code, created_at, customer_name",
+        "id, order_number, total, subtotal, shipping, discount, payment_status, order_status, tracking_code, created_at",
       )
       .eq("id", data.orderId)
       .maybeSingle();

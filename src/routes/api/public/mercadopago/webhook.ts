@@ -28,7 +28,7 @@ return { payment_status: "cancelled" as const, order_status: "cancelled" as cons
 /** Valida a assinatura x-signature do Mercado Pago quando o segredo está configurado. */
 function signatureValid(request: Request, dataId: string): boolean {
   const secret = process.env["MERCADOPAGO_WEBHOOK_SECRET"];
-  if (!secret) return true; // segredo opcional: sem ele, o pagamento ainda é reconsultado na API
+  if (!secret) return false;
   const signature = request.headers.get("x-signature") ?? "";
   const requestId = request.headers.get("x-request-id") ?? "";
   const parts = Object.fromEntries(
@@ -49,7 +49,8 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
     handlers: {
       POST: async ({ request }) => {
         const accessToken = process.env["MERCADOPAGO_ACCESS_TOKEN"];
-        if (!accessToken) return new Response("not configured", { status: 200 });
+        const webhookSecret = process.env["MERCADOPAGO_WEBHOOK_SECRET"];
+        if (!accessToken || !webhookSecret) return new Response("not configured", { status: 503 });
 
         let body: { type?: string; action?: string; data?: { id?: string } } = {};
         try {
@@ -73,48 +74,35 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
         if (!orderId) return new Response("no reference", { status: 200 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        if (payment.status === "approved") {
+          const { error } = await supabaseAdmin.rpc("process_approved_payment", {
+            p_order_id: orderId,
+            p_provider_payment_id: String(payment.id),
+            p_status: payment.status,
+            p_amount: payment.transaction_amount ?? 0,
+            p_payment_method: payment.payment_method_id ?? "mercadopago",
+            p_raw: payment as never,
+          });
+          if (error) return new Response("payment processing failed", { status: 202 });
+          return new Response("ok", { status: 200 });
+        }
+
         const mapped = mapStatus(payment.status);
+        await supabaseAdmin.from("orders").update({
+          payment_status: mapped.payment_status,
+          order_status: mapped.order_status,
+          mp_payment_id: String(payment.id),
+          payment_method: payment.payment_method_id ?? "mercadopago",
+        }).eq("id", orderId);
 
-        await supabaseAdmin
-          .from("orders")
-          .update({
-            payment_status: mapped.payment_status,
-            order_status: mapped.order_status,
-            mp_payment_id: String(payment.id),
-            payment_method: payment.payment_method_id ?? "mercadopago",
-          })
-          .eq("id", orderId);
-
-        await supabaseAdmin.from("payments").insert({
+        await supabaseAdmin.from("payments").upsert({
           order_id: orderId,
           provider: "mercadopago",
           provider_payment_id: String(payment.id),
           status: payment.status ?? null,
           amount: payment.transaction_amount ?? null,
           raw: payment as never,
-        });
-
-        // Baixa de estoque somente na aprovação.
-        if (payment.status === "approved") {
-          const { data: items } = await supabaseAdmin
-            .from("order_items")
-            .select("product_id, quantity")
-            .eq("order_id", orderId);
-          for (const item of items ?? []) {
-            if (!item.product_id) continue;
-            const { data: product } = await supabaseAdmin
-              .from("products")
-              .select("stock")
-              .eq("id", item.product_id)
-              .maybeSingle();
-            if (product) {
-              await supabaseAdmin
-                .from("products")
-                .update({ stock: Math.max(0, product.stock - item.quantity) })
-                .eq("id", item.product_id);
-            }
-          }
-        }
+        }, { onConflict: "provider,provider_payment_id", ignoreDuplicates: true });
 
         return new Response("ok", { status: 200 });
       },
