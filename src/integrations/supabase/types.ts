@@ -287,6 +287,10 @@ export type Database = {
           payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           shipping: number
+          shipping_company_name: string | null
+          shipping_delivery_days: number | null
+          shipping_service_id: string | null
+          shipping_service_name: string | null
           state: string | null
           street: string | null
           subtotal: number
@@ -317,6 +321,10 @@ export type Database = {
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           shipping?: number
+          shipping_company_name?: string | null
+          shipping_delivery_days?: number | null
+          shipping_service_id?: string | null
+          shipping_service_name?: string | null
           state?: string | null
           street?: string | null
           subtotal?: number
@@ -347,6 +355,10 @@ export type Database = {
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           shipping?: number
+          shipping_company_name?: string | null
+          shipping_delivery_days?: number | null
+          shipping_service_id?: string | null
+          shipping_service_name?: string | null
           state?: string | null
           street?: string | null
           subtotal?: number
@@ -469,6 +481,9 @@ export type Database = {
           is_active: boolean
           min_quantity: number
           name: string
+          package_height_cm: number
+          package_length_cm: number
+          package_width_cm: number
           price: number
           sale_price: number | null
           shipping_info: string
@@ -493,6 +508,9 @@ export type Database = {
           is_active?: boolean
           min_quantity?: number
           name: string
+          package_height_cm?: number
+          package_length_cm?: number
+          package_width_cm?: number
           price?: number
           sale_price?: number | null
           shipping_info?: string
@@ -517,6 +535,9 @@ export type Database = {
           is_active?: boolean
           min_quantity?: number
           name?: string
+          package_height_cm?: number
+          package_length_cm?: number
+          package_width_cm?: number
           price?: number
           sale_price?: number | null
           shipping_info?: string
@@ -567,6 +588,7 @@ export type Database = {
           instagram: string | null
           logo_url: string | null
           privacy_policy: string
+          shipping_origin_zip: string
           store_description: string
           store_name: string
           terms: string
@@ -588,6 +610,7 @@ export type Database = {
           instagram?: string | null
           logo_url?: string | null
           privacy_policy?: string
+          shipping_origin_zip?: string
           store_description?: string
           store_name?: string
           terms?: string
@@ -609,6 +632,7 @@ export type Database = {
           instagram?: string | null
           logo_url?: string | null
           privacy_policy?: string
+          shipping_origin_zip?: string
           store_description?: string
           store_name?: string
           terms?: string
