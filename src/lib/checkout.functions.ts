@@ -30,7 +30,7 @@ const checkoutSchema = z.object({
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
-const PUBLIC_ORIGIN = "https://project--a219438c-fd94-4d7a-9791-9d7e9c46f691.lovable.app";
+const PUBLIC_ORIGIN = "https://massadolucao.lovable.app";
 
 function requestOrigin() {
   return process.env["PUBLIC_SITE_URL"] ?? PUBLIC_ORIGIN;
@@ -39,6 +39,10 @@ function requestOrigin() {
 export const createCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => checkoutSchema.parse(data))
   .handler(async ({ data }) => {
+    const accessToken = process.env["MERCADOPAGO_ACCESS_TOKEN"];
+    if (!accessToken) {
+      throw new Error("O pagamento ainda está sendo configurado. Tente novamente em breve.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Preços e estoque sempre vêm do banco, nunca do navegador.
@@ -156,17 +160,6 @@ export const createCheckout = createServerFn({ method: "POST" })
     );
 
     // 4. Mercado Pago
-    const accessToken = process.env["MERCADOPAGO_ACCESS_TOKEN"];
-    if (!accessToken) {
-      return {
-        orderId: order.id as string,
-        orderNumber: order.order_number as number,
-        initPoint: null as string | null,
-        warning:
-          "O pagamento pelo Mercado Pago ainda não está configurado. O pedido foi registrado e a loja entrará em contato.",
-      };
-    }
-
     const origin = requestOrigin();
     const preferenceBody = {
       items: lines.map((l) => ({
