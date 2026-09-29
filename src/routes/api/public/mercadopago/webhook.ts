@@ -16,7 +16,7 @@ function mapStatus(status: string | undefined) {
     case "rejected":
       return { payment_status: "rejected" as const, order_status: "awaiting_payment" as const };
     case "cancelled":
-ədə      return { payment_status: "cancelled" as const, order_status: "cancelled" as const };
+return { payment_status: "cancelled" as const, order_status: "cancelled" as const };
     case "refunded":
     case "charged_back":
       return { payment_status: "refunded" as const, order_status: "cancelled" as const };
