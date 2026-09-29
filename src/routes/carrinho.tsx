@@ -26,7 +26,7 @@ export const Route = createFileRoute("/carrinho")({
 function CarrinhoPage() {
   const { items, setQuantity, remove, subtotal } = useCart();
   const { data: settings } = useQuery(settingsQuery);
-  const shipping = calcShipping(subtotal, settings);
+  const shipping = calcShipping(subtotal, settings ?? null);
 
   return (
     <SiteLayout>

@@ -91,7 +91,7 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           provider_payment_id: String(payment.id),
           status: payment.status ?? null,
           amount: payment.transaction_amount ?? null,
-          raw: payment as unknown as Record<string, unknown>,
+          raw: payment as never,
         });
 
         // Baixa de estoque somente na aprovação.

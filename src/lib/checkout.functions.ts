@@ -1,4 +1,4 @@
-import { createServerFn, getRequest } from "@tanstack/react-start";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { calcShipping } from "./shipping";
 
@@ -30,11 +30,10 @@ const checkoutSchema = z.object({
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
+const PUBLIC_ORIGIN = "https://project--a219438c-fd94-4d7a-9791-9d7e9c46f691.lovable.app";
+
 function requestOrigin() {
-  const req = getRequest();
-  const url = new URL(req.url);
-  const forwarded = url.hostname === "localhost" ? req.headers.get("x-forwarded-host") : null;
-  return forwarded ? `https://${forwarded}` : url.origin;
+  return process.env["PUBLIC_SITE_URL"] ?? PUBLIC_ORIGIN;
 }
 
 export const createCheckout = createServerFn({ method: "POST" })
