@@ -48,9 +48,15 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const accessToken = process.env["MERCADOPAGO_ACCESS_TOKEN"];
         const webhookSecret = process.env["MERCADOPAGO_WEBHOOK_SECRET"];
-        if (!accessToken || !webhookSecret) return new Response("not configured", { status: 503 });
+        if (!webhookSecret) return new Response("not configured", { status: 503 });
+        let credential: string;
+        try {
+          const { token } = await import("@/lib/mercadopago.server");
+          credential = (await token()).value;
+        } catch {
+          return new Response("not configured", { status: 503 });
+        }
 
         let body: { type?: string; action?: string; data?: { id?: string } } = {};
         try {
@@ -66,7 +72,7 @@ export const Route = createFileRoute("/api/public/mercadopago/webhook")({
           return new Response("invalid signature", { status: 401 });
 
         const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${credential}` },
         });
         if (!mpResponse.ok) return new Response("payment lookup failed", { status: 202 });
         const payment = (await mpResponse.json()) as MpPayment;
