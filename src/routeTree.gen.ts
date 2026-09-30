@@ -89,6 +89,11 @@ const ApiPublicMercadopagoWebhookRoute =
     path: '/api/public/mercadopago/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMelhorEnvioCallbackRoute = ApiPublicMelhorEnvioCallbackRouteImport.update({
+  id: '/api/public/melhor-envio/callback',
+  path: '/api/public/melhor-envio/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -104,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
+  '/api/public/melhor-envio/callback': typeof ApiPublicMelhorEnvioCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -310,6 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   PedidoOrderIdRoute: PedidoOrderIdRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
+  ApiPublicMelhorEnvioCallbackRoute: ApiPublicMelhorEnvioCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
