@@ -21,8 +21,8 @@ import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as PedidoOrderIdRouteImport } from './routes/pedido.$orderId'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
-import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
 import { Route as ApiPublicMelhorEnvioCallbackRouteImport } from './routes/api/public/melhor-envio/callback'
+import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -84,17 +84,18 @@ const ProdutoSlugRoute = ProdutoSlugRouteImport.update({
   path: '/produto/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMelhorEnvioCallbackRoute =
+  ApiPublicMelhorEnvioCallbackRouteImport.update({
+    id: '/api/public/melhor-envio/callback',
+    path: '/api/public/melhor-envio/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMercadopagoWebhookRoute =
   ApiPublicMercadopagoWebhookRouteImport.update({
     id: '/api/public/mercadopago/webhook',
     path: '/api/public/mercadopago/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMelhorEnvioCallbackRoute = ApiPublicMelhorEnvioCallbackRouteImport.update({
-  id: '/api/public/melhor-envio/callback',
-  path: '/api/public/melhor-envio/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -109,8 +110,8 @@ export interface FileRoutesByFullPath {
   '/termos': typeof TermosRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/produto/$slug': typeof ProdutoSlugRoute
-  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/melhor-envio/callback': typeof ApiPublicMelhorEnvioCallbackRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,8 +126,8 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/produto/$slug': typeof ProdutoSlugRoute
-  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/melhor-envio/callback': typeof ApiPublicMelhorEnvioCallbackRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,8 +143,8 @@ export interface FileRoutesById {
   '/termos': typeof TermosRoute
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/produto/$slug': typeof ProdutoSlugRoute
-  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/melhor-envio/callback': typeof ApiPublicMelhorEnvioCallbackRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,8 +161,8 @@ export interface FileRouteTypes {
     | '/termos'
     | '/pedido/$orderId'
     | '/produto/$slug'
-    | '/api/public/mercadopago/webhook'
     | '/api/public/melhor-envio/callback'
+    | '/api/public/mercadopago/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -176,8 +177,8 @@ export interface FileRouteTypes {
     | '/termos'
     | '/pedido/$orderId'
     | '/produto/$slug'
-    | '/api/public/mercadopago/webhook'
     | '/api/public/melhor-envio/callback'
+    | '/api/public/mercadopago/webhook'
   id:
     | '__root__'
     | '/'
@@ -192,8 +193,8 @@ export interface FileRouteTypes {
     | '/termos'
     | '/pedido/$orderId'
     | '/produto/$slug'
-    | '/api/public/mercadopago/webhook'
     | '/api/public/melhor-envio/callback'
+    | '/api/public/mercadopago/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -209,8 +210,8 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   PedidoOrderIdRoute: typeof PedidoOrderIdRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
-  ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
   ApiPublicMelhorEnvioCallbackRoute: typeof ApiPublicMelhorEnvioCallbackRoute
+  ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -299,18 +300,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProdutoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/mercadopago/webhook': {
-      id: '/api/public/mercadopago/webhook'
-      path: '/api/public/mercadopago/webhook'
-      fullPath: '/api/public/mercadopago/webhook'
-      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/melhor-envio/callback': {
       id: '/api/public/melhor-envio/callback'
       path: '/api/public/melhor-envio/callback'
       fullPath: '/api/public/melhor-envio/callback'
       preLoaderRoute: typeof ApiPublicMelhorEnvioCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mercadopago/webhook': {
+      id: '/api/public/mercadopago/webhook'
+      path: '/api/public/mercadopago/webhook'
+      fullPath: '/api/public/mercadopago/webhook'
+      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -329,8 +330,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   PedidoOrderIdRoute: PedidoOrderIdRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
-  ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
   ApiPublicMelhorEnvioCallbackRoute: ApiPublicMelhorEnvioCallbackRoute,
+  ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
