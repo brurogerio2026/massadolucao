@@ -169,13 +169,29 @@ function refreshExpiresAt(token: string, previous: string | null, rotated: boole
   return new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString();
 }
 
+function describeSupabaseError(prefix: string, error: any): Error {
+  const code = typeof error?.code === "string" ? error.code : null;
+  const message = typeof error?.message === "string" ? error.message : "erro desconhecido do banco";
+  const details = typeof error?.details === "string" && error.details ? error.details : null;
+  const hint = typeof error?.hint === "string" && error.hint ? error.hint : null;
+  const parts = [
+    code ? `código ${code}` : null,
+    message,
+    details ? `detalhes: ${details}` : null,
+    hint ? `dica: ${hint}` : null,
+  ].filter(Boolean);
+  const full = `${prefix}: ${parts.join(" | ")}`;
+  console.error("[Melhor Envio][Supabase]", full);
+  return new Error(full.slice(0, 500));
+}
+
 async function loadConnection(): Promise<ConnectionRow | null> {
   const { data, error } = await (supabaseAdmin as any)
     .from("melhor_envio_connections")
     .select("*")
     .eq("id", ME_CONNECTION_ID)
     .maybeSingle();
-  if (error) throw new Error("Não foi possível carregar a integração do Melhor Envio.");
+  if (error) throw describeSupabaseError("Não foi possível carregar a integração do Melhor Envio", error);
   return data as ConnectionRow | null;
 }
 
@@ -183,7 +199,7 @@ async function saveConnection(values: Record<string, unknown>): Promise<void> {
   const { error } = await (supabaseAdmin as any)
     .from("melhor_envio_connections")
     .upsert({ id: ME_CONNECTION_ID, ...values }, { onConflict: "id" });
-  if (error) throw new Error("Não foi possível salvar a integração do Melhor Envio.");
+  if (error) throw describeSupabaseError("Não foi possível salvar a integração do Melhor Envio", error);
 }
 
 async function requestToken(params: URLSearchParams): Promise<TokenResponse> {
@@ -247,7 +263,13 @@ export async function exchangeAuthorizationCode(code: string, state: string): Pr
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao trocar o código OAuth.";
-    await saveConnection({ status: "error", last_error: message.slice(0, 500) });
+    try {
+      await saveConnection({ status: "error", last_error: message.slice(0, 500) });
+    } catch (persistError) {
+      // Do not replace the original OAuth/storage error with a second failure
+      // while attempting to persist diagnostic information.
+      console.error("[Melhor Envio] Não foi possível persistir o erro da conexão:", persistError);
+    }
     throw error;
   }
 }
