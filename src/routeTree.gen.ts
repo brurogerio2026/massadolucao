@@ -22,6 +22,7 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as PedidoOrderIdRouteImport } from './routes/pedido.$orderId'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
+import { Route as ApiPublicMelhorEnvioCallbackRouteImport } from './routes/api/public/melhor-envio/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -125,6 +126,7 @@ export interface FileRoutesByTo {
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
+  '/api/public/melhor-envio/callback': typeof ApiPublicMelhorEnvioCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,6 +143,7 @@ export interface FileRoutesById {
   '/pedido/$orderId': typeof PedidoOrderIdRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
+  '/api/public/melhor-envio/callback': typeof ApiPublicMelhorEnvioCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,6 +161,7 @@ export interface FileRouteTypes {
     | '/pedido/$orderId'
     | '/produto/$slug'
     | '/api/public/mercadopago/webhook'
+    | '/api/public/melhor-envio/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,6 +177,7 @@ export interface FileRouteTypes {
     | '/pedido/$orderId'
     | '/produto/$slug'
     | '/api/public/mercadopago/webhook'
+    | '/api/public/melhor-envio/callback'
   id:
     | '__root__'
     | '/'
@@ -188,6 +193,7 @@ export interface FileRouteTypes {
     | '/pedido/$orderId'
     | '/produto/$slug'
     | '/api/public/mercadopago/webhook'
+    | '/api/public/melhor-envio/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,6 +210,7 @@ export interface RootRouteChildren {
   PedidoOrderIdRoute: typeof PedidoOrderIdRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
+  ApiPublicMelhorEnvioCallbackRoute: typeof ApiPublicMelhorEnvioCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
