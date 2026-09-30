@@ -171,8 +171,36 @@ function Orders({ data, refresh }: { data: AdminData; refresh: () => void }) { c
 }
 
 function Customers({ data }: { data: AdminData }) { return <><SectionHead title="Clientes" description="Contatos cadastrados durante o checkout."/><div className="rounded-lg border border-border bg-surface"><Table><TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>E-mail</TableHead><TableHead>Telefone</TableHead><TableHead>Pedidos</TableHead></TableRow></TableHeader><TableBody>{data.customers.map((c: any) => <TableRow key={c.id}><TableCell>{c.full_name}</TableCell><TableCell>{c.email}</TableCell><TableCell>{c.phone || "—"}</TableCell><TableCell>{data.orders.filter((o: any) => o.customer_id === c.id).length}</TableCell></TableRow>)}</TableBody></Table></div></>; }
-function Payments({ data }: { data: AdminData }) { return <><SectionHead title="Pagamentos" description="Histórico retornado pelo provedor de pagamento."/><div className="rounded-lg border border-border bg-surface"><Table><TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Provedor</TableHead><TableHead>Identificador</TableHead><TableHead>Status</TableHead><TableHead>Valor</TableHead></TableRow></TableHeader><TableBody>{data.payments.map((p: any) => <TableRow key={p.id}><TableCell>{formatDateBR(p.created_at)}</TableCell><TableCell>{p.provider}</TableCell><TableCell className="font-mono text-xs">{p.provider_payment_id || "—"}</TableCell><TableCell>{p.status || "—"}</TableCell><TableCell>{p.amount == null ? "—" : formatBRL(p.amount)}</TableCell></TableRow>)}</TableBody></Table></div></>; }
-
+function Payments({ data }: { data: AdminData }) {
+  const getStatus = useServerFn(getMercadoPagoConnectionStatus);
+  const save = useServerFn(saveMercadoPagoCredentials);
+  const disconnect = useServerFn(disconnectMercadoPagoConnection);
+  const [mp, setMp] = useState<any>(null);
+  const [environment, setEnvironment] = useState<"test"|"production">("test");
+  const [credential, setCredential] = useState("");
+  const [publicKey, setPublicKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function load() { try { const value = await getStatus(); setMp(value); setEnvironment(value.environment); setPublicKey(value.publicKey || ""); } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível carregar o Mercado Pago."); } }
+  useEffect(() => { void load(); }, []);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setBusy(true); try { await save({ data: { environment, accessToken: credential, publicKey } }); setCredential(""); await load(); toast.success("Mercado Pago conectado."); } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível conectar o Mercado Pago."); } finally { setBusy(false); } }
+  async function remove() { if (!confirm("Desconectar o Mercado Pago?")) return; try { await disconnect({ data: { confirm: true } }); await load(); toast.success("Mercado Pago desconectado."); } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível desconectar."); } }
+  return <div className="space-y-8">
+    <SectionHead title="Pagamentos" description="Configure o Mercado Pago e acompanhe os pagamentos recebidos."/>
+    <div className="rounded-lg border border-border bg-surface p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="font-display text-2xl uppercase">Mercado Pago</h2><p className="mt-1 text-sm text-muted-foreground">O Access Token fica criptografado no servidor e nunca é devolvido ao navegador.</p></div><Badge variant={mp?.status === "connected" ? "default" : mp?.status === "error" ? "destructive" : "secondary"}>{mp?.status === "connected" ? "Conectado" : mp?.status === "error" ? "Erro" : "Não configurado"}</Badge></div>
+      {mp?.lastError && <p className="mt-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{mp.lastError}</p>}
+      {mp?.configured && <p className="mt-4 text-sm text-muted-foreground">Ambiente atual: <strong>{mp.environment === "production" ? "Produção" : "Teste"}</strong>.</p>}
+      <form onSubmit={submit} className="mt-5 grid gap-4 md:grid-cols-2">
+        <Field label="Ambiente"><Select value={environment} onValueChange={(v) => setEnvironment(v as "test"|"production")}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="test">Teste</SelectItem><SelectItem value="production">Produção</SelectItem></SelectContent></Select></Field>
+        <Field label="Access Token"><Input value={credential} onChange={(e) => setCredential(e.target.value)} type="password" autoComplete="off" placeholder={mp?.configured ? "Deixe em branco para manter o atual" : "Cole o Access Token aqui"} /></Field>
+        <Field label="Public Key (opcional)"><Input value={publicKey} onChange={(e) => setPublicKey(e.target.value)} autoComplete="off" placeholder="APP_USR-..." /></Field>
+        <div className="flex items-end gap-2"><Button type="submit" disabled={busy}>{busy ? "Testando…" : "Testar e salvar"}</Button>{mp?.configured && <Button type="button" variant="outline" onClick={remove} disabled={busy}>Desconectar</Button>}</div>
+      </form>
+      <p className="mt-4 text-xs text-muted-foreground">Use primeiro as credenciais de teste. A credencial é validada antes de ser gravada.</p>
+    </div>
+    <div><h2 className="mb-3 font-display text-2xl uppercase">Histórico</h2><div className="rounded-lg border border-border bg-surface"><Table><TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Provedor</TableHead><TableHead>Identificador</TableHead><TableHead>Status</TableHead><TableHead>Valor</TableHead></TableRow></TableHeader><TableBody>{data.payments.map((p: any) => <TableRow key={p.id}><TableCell>{formatDateBR(p.created_at)}</TableCell><TableCell>{p.provider}</TableCell><TableCell className="font-mono text-xs">{p.provider_payment_id || "—"}</TableCell><TableCell>{p.status || "—"}</TableCell><TableCell>{p.amount == null ? "—" : formatBRL(p.amount)}</TableCell></TableRow>)}</TableBody></Table></div></div>
+  </div>;
+}
 const contentConfig: Record<Exclude<ContentKind, "coupons">, { label: string; fields: { key: string; label: string; type?: "number" | "textarea" | "boolean"; required?: boolean }[] }> = {
   banners: { label: "Banners", fields: [{ key: "title", label: "Título" }, { key: "subtitle", label: "Subtítulo", type: "textarea" }, { key: "image_url", label: "Imagem desktop" }, { key: "mobile_image_url", label: "Imagem mobile" }, { key: "button_label", label: "Texto do botão" }, { key: "button_link", label: "Link" }, { key: "sort_order", label: "Ordem", type: "number" }, { key: "is_active", label: "Ativo", type: "boolean" }] },
   testimonials: { label: "Depoimentos", fields: [{ key: "name", label: "Nome", required: true }, { key: "location", label: "Local" }, { key: "message", label: "Depoimento", type: "textarea", required: true }, { key: "photo_url", label: "Foto" }, { key: "rating", label: "Nota (1 a 5)", type: "number" }, { key: "sort_order", label: "Ordem", type: "number" }, { key: "is_active", label: "Ativo", type: "boolean" }] },
