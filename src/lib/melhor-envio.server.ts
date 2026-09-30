@@ -158,7 +158,7 @@ async function requestToken(params: URLSearchParams): Promise<TokenResponse> {
       "Content-Type": "application/json",
       "User-Agent": appUserAgent(),
     },
-    body: JSON.stringify(Object.fromEntries(params.entries())),
+    body: params.toString(),
   });
   const body = await response.text();
   let parsed: any = null;
