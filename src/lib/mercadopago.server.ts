@@ -1,0 +1,13 @@
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+const ID="00000000-0000-0000-0000-000000000002";
+function key(){const r=process.env["MELHOR_ENVIO_TOKEN_ENCRYPTION_KEY"];if(!r)throw new Error("Chave não configurada.");if(/^[0-9a-fA-F]{64}$/.test(r))return Buffer.from(r,"hex");const b=Buffer.from(r,"base64");if(b.length===32)return b;throw new Error("Chave inválida.");}
+function enc(v:string){const iv=randomBytes(12),c=createCipheriv("aes-256-gcm",key(),iv),x=Buffer.concat([c.update(v,"utf8"),c.final()]);return [iv,c.getAuthTag(),x].map(x=>x.toString("base64url")).join(".");}
+function dec(v:string){const [i,t,x]=v.split(".");if(!i||!t||!x)throw new Error("Credencial inválida.");const d=createDecipheriv("aes-256-gcm",key(),Buffer.from(i,"base64url"));d.setAuthTag(Buffer.from(t,"base64url"));return Buffer.concat([d.update(Buffer.from(x,"base64url")),d.final()]).toString("utf8");}
+async function load(){const {data,error}=await(supabaseAdmin as any).from("mercadopago_connections").select("*").eq("id",ID).maybeSingle();if(error)throw new Error(error.message);return data as any;}
+async function save(v:any){const {error}=await(supabaseAdmin as any).from("mercadopago_connections").upsert({id:ID,...v},{onConflict:"id"});if(error)throw new Error(error.message);}
+export async function status(){const c=await load();return {configured:Boolean(c?.access_token_encrypted),status:c?.status??"disconnected",environment:c?.environment??"test",publicKey:c?.public_key??"",lastError:c?.last_error??null,updatedAt:c?.updated_at??null};}
+export async function token(){const c=await load();if(c?.access_token_encrypted)return {value:dec(c.access_token_encrypted),environment:c.environment};const legacy=process.env["MERCADOPAGO_ACCESS_TOKEN"];if(legacy)return {value:legacy,environment:"production"};throw new Error("Mercado Pago não configurado.");}
+export async function connect(input:{environment:"test"|"production";value?:string;publicKey?:string;userId:string}){const c=await load();const value=input.value?.trim()||(c?.access_token_encrypted?dec(c.access_token_encrypted):"");if(!value)throw new Error("Informe a credencial.");await save({status:"connected",environment:input.environment,access_token_encrypted:enc(value),public_key:input.publicKey?.trim()||c?.public_key||null,connected_by:input.userId,last_error:null});return {ok:true};}
+export async function disconnect(){await save({status:"disconnected",access_token_encrypted:null,public_key:null,last_error:null});}
+export async function markError(message:string){try{await save({status:"error",last_error:message.slice(0,500)})}catch(e){console.error(e)}}
