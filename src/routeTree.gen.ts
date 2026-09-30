@@ -306,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/melhor-envio/callback': {
+      id: '/api/public/melhor-envio/callback'
+      path: '/api/public/melhor-envio/callback'
+      fullPath: '/api/public/melhor-envio/callback'
+      preLoaderRoute: typeof ApiPublicMelhorEnvioCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
