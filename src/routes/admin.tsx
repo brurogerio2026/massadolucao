@@ -208,7 +208,8 @@ function StoreSettings({ settings, refresh }: { settings: SettingsRow | null; re
       connection.refetch();
       window.history.replaceState({}, "", window.location.pathname);
     } else if (value === "error") {
-      toast.error("Não foi possível conectar ao Melhor Envio. Confira o Client ID, Secret e callback.");
+      const reason = new URLSearchParams(window.location.search).get("reason");
+      toast.error(reason ? `Melhor Envio: ${reason}` : "Não foi possível conectar ao Melhor Envio.");
       connection.refetch();
       window.history.replaceState({}, "", window.location.pathname);
     }
