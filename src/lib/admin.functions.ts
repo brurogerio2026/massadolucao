@@ -82,6 +82,17 @@ export const saveVariant = createServerFn({ method: "POST" }).middleware([requir
 export const deleteVariant = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input)).handler(async ({ context, data }) => {
   const db = await requireAdmin(context); const { error } = await db.from("product_variants").delete().eq("id", data.id); if (error) throw new Error(error.message); return { ok: true };
 });
+export const deleteOrder = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input)).handler(async ({ context, data }) => {
+  const db = await requireAdmin(context);
+  const payments = await db.from("payments").delete().eq("order_id", data.id);
+  if (payments.error) throw new Error(payments.error.message);
+  const items = await db.from("order_items").delete().eq("order_id", data.id);
+  if (items.error) throw new Error(items.error.message);
+  const order = await db.from("orders").delete().eq("id", data.id);
+  if (order.error) throw new Error(order.error.message);
+  return { ok: true };
+});
+
 export const updateOrder = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((input: unknown) => orderSchema.parse(input)).handler(async ({ context, data }) => {
   const db = await requireAdmin(context); const { id, ...values } = data; const { error } = await db.from("orders").update(values).eq("id", id); if (error) throw new Error(error.message); return { ok: true };
 });
