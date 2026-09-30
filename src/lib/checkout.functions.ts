@@ -67,10 +67,10 @@ export const validateCoupon = createServerFn({ method: "POST" })
 export const createCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => checkoutSchema.parse(data))
   .handler(async ({ data }) => {
-    const accessToken = process.env["MERCADOPAGO_ACCESS_TOKEN"];
-    if (!accessToken) {
-      throw new Error("O pagamento ainda está sendo configurado. Tente novamente em breve.");
-    }
+    const { token: getMercadoPagoToken } = await import("./mercadopago.server");
+    const mpConfig = await getMercadoPagoToken();
+    const credential = mpConfig.value;
+    const mpEnvironment = mpConfig.environment;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.customer.zip_code.replace(/\D/g, "") !== data.shipping.destinationZip) {
       throw new Error("O CEP do endereço mudou. Calcule o frete novamente.");
@@ -252,7 +252,7 @@ export const createCheckout = createServerFn({ method: "POST" })
     const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${credential}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(preferenceBody),
@@ -283,7 +283,9 @@ export const createCheckout = createServerFn({ method: "POST" })
     return {
       orderId: order.id as string,
       orderNumber: order.order_number as number,
-      initPoint: (preference.init_point ?? preference.sandbox_init_point ?? null) as string | null,
+      initPoint: (mpEnvironment === "test"
+        ? (preference.sandbox_init_point ?? preference.init_point ?? null)
+        : (preference.init_point ?? preference.sandbox_init_point ?? null)) as string | null,
       warning: null as string | null,
     };
   });
