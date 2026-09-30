@@ -4,6 +4,7 @@ create table if not exists public.mercadopago_connections (
  environment text not null default 'test' check(environment in ('test','production')),
  access_token_encrypted text,
  public_key text,
+ webhook_secret_encrypted text,
  connected_by uuid references auth.users(id) on delete set null,
  last_error text,
  created_at timestamptz not null default now(),
