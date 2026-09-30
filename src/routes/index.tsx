@@ -229,30 +229,22 @@ function Home() {
                   Ver todos os detalhes do produto
                 </Link>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <img
-                  src={main.image_url ?? iscaImg}
-                  alt="Isca pronta no anzol"
-                  loading="lazy"
-                  width={736}
-                  height={912}
-                  className="col-span-1 row-span-2 h-full w-full rounded-xl object-cover ring-1 ring-border"
-                />
-                <img
-                  src={linhaImg}
+                  src={settings?.pot_section_image_1_url ?? linhaImg}
                   alt="Linha de pesca sobre a água ao amanhecer"
                   loading="lazy"
                   width={944}
                   height={704}
-                  className="col-span-2 w-full rounded-xl object-cover ring-1 ring-border"
+                  className="w-full rounded-xl object-cover ring-1 ring-border"
                 />
                 <img
-                  src={tilapiaImg}
+                  src={settings?.pot_section_image_2_url ?? tilapiaImg}
                   alt="Tilápia saltando na água"
                   loading="lazy"
                   width={944}
                   height={704}
-                  className="col-span-2 w-full rounded-xl object-cover ring-1 ring-border"
+                  className="w-full rounded-xl object-cover ring-1 ring-border"
                 />
               </div>
             </div>
