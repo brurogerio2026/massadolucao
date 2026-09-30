@@ -178,7 +178,7 @@ function Home() {
               Como usar
             </span>
             <h2 className="mt-3 text-balance font-display text-4xl uppercase leading-none lg:text-5xl">
-              Do pote ao anzol
+              Do pacote ao Anzol
             </h2>
           </div>
           <div className="relative">
