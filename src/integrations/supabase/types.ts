@@ -576,6 +576,7 @@ export type Database = {
       store_settings: {
         Row: {
           about_image_url: string | null
+          hero_image_url: string | null
           about_text: string
           about_title: string
           address: string | null
@@ -598,6 +599,7 @@ export type Database = {
         }
         Insert: {
           about_image_url?: string | null
+          hero_image_url?: string | null
           about_text?: string
           about_title?: string
           address?: string | null
@@ -620,6 +622,7 @@ export type Database = {
         }
         Update: {
           about_image_url?: string | null
+          hero_image_url?: string | null
           about_text?: string
           about_title?: string
           address?: string | null
