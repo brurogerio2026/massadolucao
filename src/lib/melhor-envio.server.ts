@@ -155,7 +155,7 @@ async function requestToken(params: URLSearchParams): Promise<TokenResponse> {
     method: "POST",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
       "User-Agent": appUserAgent(),
     },
     body: params.toString(),
