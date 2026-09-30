@@ -20,11 +20,12 @@ export async function quoteShipping(db: AdminClient, destinationZip: string, req
     const salePrice = product.sale_price == null ? 0 : Number(product.sale_price);
     return { id: product.id, width, height, length, weight, insurance_value: Number((salePrice > 0 ? salePrice : Number(product.price)).toFixed(2)), quantity: item.quantity };
   });
-  const { data: settings, error: settingsError } = await db.from("store_settings").select("shipping_origin_zip, free_shipping_enabled, free_shipping_min").limit(1).maybeSingle();
+  const { data: settings, error: settingsError } = await db.from("store_settings").select("shipping_origin_zip, free_shipping_enabled, free_shipping_min, email").limit(1).maybeSingle();
   if (settingsError || !settings) throw new Error("O CEP de origem da loja não está configurado.");
   const originZip = String(settings.shipping_origin_zip ?? "").replace(/\D/g, "");
   if (originZip.length !== 8) throw new Error("O CEP de origem da loja não está configurado.");
-  const response = await fetch("https://melhorenvio.com.br/api/v2/me/shipment/calculate", { method: "POST", headers: { Accept: "application/json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": "Massa do Lucao (loja online)" }, body: JSON.stringify({ from: { postal_code: originZip }, to: { postal_code: cleanZip }, products: payloadProducts, options: { receipt: false, own_hand: false } }) });
+  if (!settings.email) throw new Error("Cadastre o e-mail da loja nas configurações antes de calcular o frete.");
+  const response = await fetch("https://melhorenvio.com.br/api/v2/me/shipment/calculate", { method: "POST", headers: { Accept: "application/json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": `Massa do Lucao (${settings.email})` }, body: JSON.stringify({ from: { postal_code: originZip }, to: { postal_code: cleanZip }, products: payloadProducts, options: { receipt: false, own_hand: false } }) });
   const body = await response.text();
   if (!response.ok) { console.error(`Melhor Envio request failed [${response.status}]: ${body}`); throw new Error(response.status === 401 ? "A integração de frete precisa ser reconectada." : "Não foi possível calcular o frete para este CEP."); }
   let quotes: MelhorEnvioQuote[];

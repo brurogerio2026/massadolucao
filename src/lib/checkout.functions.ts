@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { calcShipping } from "./shipping";
 
 const checkoutSchema = z.object({
   customer: z.object({
@@ -45,6 +44,9 @@ export const createCheckout = createServerFn({ method: "POST" })
       throw new Error("O pagamento ainda está sendo configurado. Tente novamente em breve.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.customer.zip_code.replace(/\D/g, "") !== data.shipping.destinationZip) {
+      throw new Error("O CEP do endereço mudou. Calcule o frete novamente.");
+    }
 
     // 1. Preços e estoque sempre vêm do banco, nunca do navegador.
     const ids = data.items.map((i) => i.productId);
