@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BarChart3, Boxes, ClipboardList, CreditCard, FileImage, Gift, LogOut, PackagePlus, Settings, ShoppingBag, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { getAdminData, saveProduct, deleteProduct, saveVariant, deleteVariant, updateOrder, saveSettings, saveContent, deleteContent, uploadAdminAsset } from "@/lib/admin.functions";
+import { disconnectMelhorEnvioConnection, getMelhorEnvioConnectionStatus, startMelhorEnvioOAuth } from "@/lib/melhor-envio.functions";
 import { formatBRL, formatDateBR } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -189,9 +190,115 @@ function Coupons({ data, refresh }: { data: AdminData; refresh: () => void }) { 
   return <><SectionHead title="Cupons" description="Descontos com período, mínimo e limite de uso." action={<Button onClick={() => setEditing({ is_active: true })}>Novo cupom</Button>}/><div className="rounded-lg border border-border bg-surface"><Table><TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Desconto</TableHead><TableHead>Mínimo</TableHead><TableHead>Usos</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{data.coupons.map((c: any) => <TableRow key={c.id} className="cursor-pointer" onClick={() => setEditing(c)}><TableCell className="font-mono font-bold">{c.code}</TableCell><TableCell>{c.discount_percent ? `${c.discount_percent}%` : formatBRL(c.discount_amount || 0)}</TableCell><TableCell>{formatBRL(c.min_order_amount)}</TableCell><TableCell>{c.used_count}{c.usage_limit ? `/${c.usage_limit}` : ""}</TableCell><TableCell><Badge variant={c.is_active ? "default" : "secondary"}>{c.is_active ? "Ativo" : "Inativo"}</Badge></TableCell></TableRow>)}</TableBody></Table></div><Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}><DialogContent><DialogHeader><DialogTitle>{editing?.["id"] ? "Editar cupom" : "Novo cupom"}</DialogTitle></DialogHeader>{editing && <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2"><Field label="Código"><Input name="code" defaultValue={editing["code"] ?? ""} required/></Field><Field label="Pedido mínimo"><Input name="min_order_amount" type="number" min="0" step="0.01" defaultValue={editing["min_order_amount"] ?? 0}/></Field><Field label="Desconto percentual"><Input name="discount_percent" type="number" min="0" max="100" step="0.01" defaultValue={editing["discount_percent"] ?? ""}/></Field><Field label="Desconto fixo"><Input name="discount_amount" type="number" min="0" step="0.01" defaultValue={editing["discount_amount"] ?? ""}/></Field><Field label="Início"><Input name="starts_at" type="datetime-local" defaultValue={editing["starts_at"]?.slice(0,16) ?? ""}/></Field><Field label="Validade"><Input name="expires_at" type="datetime-local" defaultValue={editing["expires_at"]?.slice(0,16) ?? ""}/></Field><Field label="Limite de uso"><Input name="usage_limit" type="number" min="1" defaultValue={editing["usage_limit"] ?? ""}/></Field><label className="flex items-center gap-2 self-end py-2 text-sm"><input name="is_active" type="checkbox" defaultChecked={editing["is_active"] ?? true}/> Ativo</label><DialogFooter className="sm:col-span-2"><Button type="button" variant="ghost" onClick={async () => { if (editing["id"]) { await remove({ data: { table: "coupons", id: String(editing["id"]) } }); setEditing(null); refresh(); } }}>Excluir</Button><Button type="submit">Salvar cupom</Button></DialogFooter></form>}</DialogContent></Dialog></>;
 }
 
-function StoreSettings({ settings, refresh }: { settings: SettingsRow | null; refresh: () => void }) { const save = useServerFn(saveSettings); const upload = useServerFn(uploadAdminAsset); const [busy, setBusy] = useState(false); if (!settings) return <p>Configurações não encontradas.</p>; const currentSettings = settings;
-  async function uploadFile(file: File, input: HTMLInputElement) { if (file.size > 10_000_000) { toast.error("A imagem deve ter até 10 MB."); return; } const base64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.onerror = reject; reader.readAsDataURL(file); }); try { const result = await upload({ data: { name: file.name, type: file.type, base64 } }); const target = input.dataset["target"]; const field = target ? document.querySelector<HTMLInputElement>(`input[name="${target}"]`) : null; if (field) field.value = result.url; toast.success("Imagem enviada."); } catch { toast.error("Não foi possível enviar a imagem."); } }
-  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setBusy(true); const f = new FormData(event.currentTarget); try { await save({ data: { id: currentSettings.id, store_name: String(f.get("store_name")), store_description: String(f.get("store_description")), whatsapp: String(f.get("whatsapp")) || null, whatsapp_message: String(f.get("whatsapp_message")), instagram: String(f.get("instagram")) || null, email: String(f.get("email")), address: String(f.get("address")) || null, logo_url: String(f.get("logo_url")) || null, favicon_url: String(f.get("favicon_url")) || null, about_title: String(f.get("about_title")), about_text: String(f.get("about_text")), about_image_url: String(f.get("about_image_url")) || null, flat_shipping_rate: Number(f.get("flat_shipping_rate")), free_shipping_enabled: f.get("free_shipping_enabled") === "on", free_shipping_min: f.get("free_shipping_min") ? Number(f.get("free_shipping_min")) : null, shipping_origin_zip: String(f.get("shipping_origin_zip")).replace(/\D/g, ""), privacy_policy: String(f.get("privacy_policy")), terms: String(f.get("terms")) } }); toast.success("Configurações salvas."); refresh(); } catch (error) { toast.error(error instanceof Error ? error.message : "Erro ao salvar."); } finally { setBusy(false); } }
-  return <><SectionHead title="Configurações" description="Identidade, contatos, frete e textos legais."/><form onSubmit={submit} className="space-y-6"><section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Identidade da loja</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Nome da loja"><Input name="store_name" defaultValue={settings.store_name}/></Field><Field label="E-mail"><Input name="email" type="email" defaultValue={settings.email ?? ""}/></Field><div className="sm:col-span-2"><Field label="Descrição"><Textarea name="store_description" defaultValue={settings.store_description}/></Field></div><UploadField label="Logo" name="logo_url" value={settings.logo_url} onFile={uploadFile}/><UploadField label="Favicon" name="favicon_url" value={settings.favicon_url} onFile={uploadFile}/></div></section><section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Contato</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="WhatsApp"><Input name="whatsapp" defaultValue={settings.whatsapp ?? ""}/></Field><Field label="Instagram"><Input name="instagram" defaultValue={settings.instagram ?? ""}/></Field><Field label="Mensagem do WhatsApp"><Input name="whatsapp_message" defaultValue={settings.whatsapp_message}/></Field><Field label="Endereço"><Input name="address" defaultValue={settings.address ?? ""}/></Field></div></section><section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Sobre a massa</h2><div className="mt-4 grid gap-4"><Field label="Título"><Input name="about_title" defaultValue={settings.about_title}/></Field><Field label="Texto"><Textarea name="about_text" rows={6} defaultValue={settings.about_text}/></Field><UploadField label="Imagem" name="about_image_url" value={settings.about_image_url} onFile={uploadFile}/></div></section><section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Frete</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="CEP de origem"><Input name="shipping_origin_zip" inputMode="numeric" pattern="[0-9]{8}" defaultValue={settings.shipping_origin_zip}/></Field><Field label="Valor fixo"><Input name="flat_shipping_rate" type="number" min="0" step="0.01" defaultValue={settings.flat_shipping_rate}/></Field><Field label="Mínimo para frete grátis"><Input name="free_shipping_min" type="number" min="0" step="0.01" defaultValue={settings.free_shipping_min ?? ""}/></Field><label className="flex items-center gap-3 text-sm"><input name="free_shipping_enabled" type="checkbox" defaultChecked={settings.free_shipping_enabled}/> Ativar frete grátis</label></div></section><section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Textos legais</h2><div className="mt-4 grid gap-4"><Field label="Política de privacidade"><Textarea name="privacy_policy" rows={7} defaultValue={settings.privacy_policy}/></Field><Field label="Termos"><Textarea name="terms" rows={7} defaultValue={settings.terms}/></Field></div></section><Button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar configurações"}</Button></form></>;
+function StoreSettings({ settings, refresh }: { settings: SettingsRow | null; refresh: () => void }) {
+  const save = useServerFn(saveSettings);
+  const upload = useServerFn(uploadAdminAsset);
+  const startOAuth = useServerFn(startMelhorEnvioOAuth);
+  const disconnect = useServerFn(disconnectMelhorEnvioConnection);
+  const getShippingStatus = useServerFn(getMelhorEnvioConnectionStatus);
+  const [busy, setBusy] = useState(false);
+  const [connectionBusy, setConnectionBusy] = useState(false);
+  const connection = useQuery({ queryKey: ["melhor-envio-status"], queryFn: () => getShippingStatus(), staleTime: 30_000 });
+  const currentSettings = settings;
+
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("melhor_envio");
+    if (value === "connected") {
+      toast.success("Melhor Envio conectado com sucesso.");
+      connection.refetch();
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (value === "error") {
+      toast.error("Não foi possível conectar ao Melhor Envio. Confira o Client ID, Secret e callback.");
+      connection.refetch();
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  if (!settings) return <p>Configurações não encontradas.</p>;
+
+  async function connectMelhorEnvio() {
+    setConnectionBusy(true);
+    try {
+      const result = await startOAuth();
+      window.location.assign(result.url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a conexão.");
+      setConnectionBusy(false);
+    }
+  }
+
+  async function disconnectMelhorEnvio() {
+    setConnectionBusy(true);
+    try {
+      await disconnect({ data: { confirm: true } });
+      await connection.refetch();
+      toast.success("Integração do Melhor Envio desconectada.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível desconectar.");
+    } finally {
+      setConnectionBusy(false);
+    }
+  }
+
+  async function uploadFile(file: File, input: HTMLInputElement) {
+    if (file.size > 10_000_000) { toast.error("A imagem deve ter até 10 MB."); return; }
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    try {
+      const result = await upload({ data: { name: file.name, type: file.type, base64 } });
+      const target = input.dataset["target"];
+      const field = target ? document.querySelector<HTMLInputElement>(`input[name="${target}"]`) : null;
+      if (field) field.value = result.url;
+      toast.success("Imagem enviada.");
+    } catch { toast.error("Não foi possível enviar a imagem."); }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy(true);
+    const f = new FormData(event.currentTarget);
+    try {
+      await save({ data: {
+        id: currentSettings.id, store_name: String(f.get("store_name")), store_description: String(f.get("store_description")),
+        whatsapp: String(f.get("whatsapp")) || null, whatsapp_message: String(f.get("whatsapp_message")), instagram: String(f.get("instagram")) || null,
+        email: String(f.get("email")), address: String(f.get("address")) || null, logo_url: String(f.get("logo_url")) || null,
+        favicon_url: String(f.get("favicon_url")) || null, about_title: String(f.get("about_title")), about_text: String(f.get("about_text")),
+        about_image_url: String(f.get("about_image_url")) || null, flat_shipping_rate: Number(f.get("flat_shipping_rate")),
+        free_shipping_enabled: f.get("free_shipping_enabled") === "on", free_shipping_min: f.get("free_shipping_min") ? Number(f.get("free_shipping_min")) : null,
+        shipping_origin_zip: String(f.get("shipping_origin_zip")).replace(/\D/g, ""), privacy_policy: String(f.get("privacy_policy")), terms: String(f.get("terms"))
+      }});
+      toast.success("Configurações salvas."); refresh();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Erro ao salvar."); }
+    finally { setBusy(false); }
+  }
+
+  const connected = connection.data?.connected === true;
+  const statusLabel = connected ? "Conectado" : connection.data?.status === "error" ? "Reconexão necessária" : "Não conectado";
+
+  return <><SectionHead title="Configurações" description="Identidade, contatos, frete e textos legais."/>
+    <form onSubmit={submit} className="space-y-6">
+      <section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Identidade da loja</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Nome da loja"><Input name="store_name" defaultValue={settings.store_name}/></Field><Field label="E-mail"><Input name="email" type="email" defaultValue={settings.email ?? ""}/></Field><div className="sm:col-span-2"><Field label="Descrição"><Textarea name="store_description" defaultValue={settings.store_description}/></Field></div><UploadField label="Logo" name="logo_url" value={settings.logo_url} onFile={uploadFile}/><UploadField label="Favicon" name="favicon_url" value={settings.favicon_url} onFile={uploadFile}/></div></section>
+      <section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Contato</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="WhatsApp"><Input name="whatsapp" defaultValue={settings.whatsapp ?? ""}/></Field><Field label="Instagram"><Input name="instagram" defaultValue={settings.instagram ?? ""}/></Field><Field label="Mensagem do WhatsApp"><Input name="whatsapp_message" defaultValue={settings.whatsapp_message}/></Field><Field label="Endereço"><Input name="address" defaultValue={settings.address ?? ""}/></Field></div></section>
+      <section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Sobre a massa</h2><div className="mt-4 grid gap-4"><Field label="Título"><Input name="about_title" defaultValue={settings.about_title}/></Field><Field label="Texto"><Textarea name="about_text" rows={6} defaultValue={settings.about_text}/></Field><UploadField label="Imagem" name="about_image_url" value={settings.about_image_url} onFile={uploadFile}/></div></section>
+      <section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Frete</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="CEP de origem"><Input name="shipping_origin_zip" inputMode="numeric" pattern="[0-9]{8}" defaultValue={settings.shipping_origin_zip}/></Field><Field label="Valor fixo"><Input name="flat_shipping_rate" type="number" min="0" step="0.01" defaultValue={settings.flat_shipping_rate}/></Field><Field label="Mínimo para frete grátis"><Input name="free_shipping_min" type="number" min="0" step="0.01" defaultValue={settings.free_shipping_min ?? ""}/></Field><label className="flex items-center gap-3 text-sm"><input name="free_shipping_enabled" type="checkbox" defaultChecked={settings.free_shipping_enabled}/> Ativar frete grátis</label></div></section>
+      <section className="rounded-lg border border-border bg-surface p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div><h2 className="font-semibold">Melhor Envio</h2><p className="mt-1 text-sm text-muted-foreground">Conecte a conta para cotar fretes com OAuth2. Os tokens ficam armazenados somente no servidor.</p></div>
+          <Badge variant={connected ? "default" : "secondary"}>{statusLabel}</Badge>
+        </div>
+        {connection.data?.lastError && !connected && <p className="mt-3 text-sm text-destructive">{connection.data.lastError}</p>}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button type="button" onClick={connectMelhorEnvio} disabled={connectionBusy || connection.isLoading}>{connected ? "Reconectar Melhor Envio" : "Conectar Melhor Envio"}</Button>
+          {connected && <Button type="button" variant="outline" onClick={disconnectMelhorEnvio} disabled={connectionBusy}>Desconectar</Button>}
+        </div>
+        {connection.data?.expiresAt && connected && <p className="mt-3 text-xs text-muted-foreground">O acesso é renovado automaticamente antes de expirar.</p>}
+      </section>
+      <section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Textos legais</h2><div className="mt-4 grid gap-4"><Field label="Política de privacidade"><Textarea name="privacy_policy" rows={7} defaultValue={settings.privacy_policy}/></Field><Field label="Termos"><Textarea name="terms" rows={7} defaultValue={settings.terms}/></Field></div></section>
+      <Button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar configurações"}</Button>
+    </form>
+  </>;
 }
 function UploadField({ label, name, value, onFile }: { label: string; name: string; value: string | null; onFile: (file: File, input: HTMLInputElement) => void }) { return <div className="space-y-2"><Field label={label}><Input name={name} defaultValue={value ?? ""}/></Field><Input type="file" accept="image/*" data-target={name} onChange={(e) => { const file = e.currentTarget.files?.[0]; if (file) onFile(file, e.currentTarget); }}/></div>; }

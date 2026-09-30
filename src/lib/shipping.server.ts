@@ -1,12 +1,11 @@
 import type { Database } from "@/integrations/supabase/types";
 import type { ShippingOption, ShippingQuoteItem } from "./shipping";
+import { requestMelhorEnvio } from "./melhor-envio.server";
 
 type AdminClient = { from: (table: keyof Database["public"]["Tables"]) => any };
 type MelhorEnvioQuote = { id?: number | string; name?: string; price?: string; custom_price?: string; delivery_time?: number; custom_delivery_time?: number; error?: string; company?: { name?: string; picture?: string } };
 
 export async function quoteShipping(db: AdminClient, destinationZip: string, requestedItems: ShippingQuoteItem[]): Promise<{ destinationZip: string; options: ShippingOption[] }> {
-  const token = process.env["MELHOR_ENVIO_ACCESS_TOKEN"];
-  if (!token) throw new Error("O cálculo de frete está temporariamente indisponível.");
   const cleanZip = destinationZip.replace(/\D/g, "");
   if (cleanZip.length !== 8) throw new Error("Informe um CEP válido com 8 números.");
   const ids = [...new Set(requestedItems.map((item) => item.productId))];
@@ -25,7 +24,7 @@ export async function quoteShipping(db: AdminClient, destinationZip: string, req
   const originZip = String(settings.shipping_origin_zip ?? "").replace(/\D/g, "");
   if (originZip.length !== 8) throw new Error("O CEP de origem da loja não está configurado.");
   if (!settings.email) throw new Error("Cadastre o e-mail da loja nas configurações antes de calcular o frete.");
-  const response = await fetch("https://melhorenvio.com.br/api/v2/me/shipment/calculate", { method: "POST", headers: { Accept: "application/json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": `Massa do Lucao (${settings.email})` }, body: JSON.stringify({ from: { postal_code: originZip }, to: { postal_code: cleanZip }, products: payloadProducts, options: { receipt: false, own_hand: false } }) });
+  const response = await requestMelhorEnvio("/api/v2/me/shipment/calculate", { method: "POST", body: JSON.stringify({ from: { postal_code: originZip }, to: { postal_code: cleanZip }, products: payloadProducts, options: { receipt: false, own_hand: false } }) });
   const body = await response.text();
   if (!response.ok) { console.error(`Melhor Envio request failed [${response.status}]: ${body}`); throw new Error(response.status === 401 ? "A integração de frete precisa ser reconectada." : "Não foi possível calcular o frete para este CEP."); }
   let quotes: MelhorEnvioQuote[];
