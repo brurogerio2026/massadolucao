@@ -10,15 +10,16 @@ export const Route = createFileRoute("/api/public/melhor-envio/callback")({
         const state = url.searchParams.get("state");
         const oauthError = url.searchParams.get("error");
 
-        const redirect = (result: "connected" | "error") => {
+        const redirect = (result: "connected" | "error", reason?: string) => {
           const target = new URL("/admin", request.url);
           target.searchParams.set("melhor_envio", result);
+          if (reason) target.searchParams.set("reason", reason.slice(0, 180));
           return Response.redirect(target.toString(), 303);
         };
 
         if (oauthError || !code || !state) {
           console.error("Melhor Envio OAuth callback rejected.");
-          return redirect("error");
+          return redirect("error", oauthError ?? "authorization_failed");
         }
 
         try {
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/api/public/melhor-envio/callback")({
           return redirect("connected");
         } catch (error) {
           console.error("Melhor Envio OAuth callback failed:", error instanceof Error ? error.message : error);
-          return redirect("error");
+          return redirect("error", error instanceof Error ? error.message : "token_exchange_failed");
         }
       },
     },
