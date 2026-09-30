@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { getAdminData, saveProduct, deleteProduct, saveVariant, deleteVariant, updateOrder, saveSettings, saveContent, deleteContent, uploadAdminAsset } from "@/lib/admin.functions";
-import { disconnectMelhorEnvioConnection, getMelhorEnvioConnectionStatus, startMelhorEnvioOAuth } from "@/lib/melhor-envio.functions";
+import { disconnectMelhorEnvioConnection, getMelhorEnvioConnectionStatus, getMelhorEnvioConfigurationStatus, startMelhorEnvioOAuth } from "@/lib/melhor-envio.functions";
 import { formatBRL, formatDateBR } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,9 +196,11 @@ function StoreSettings({ settings, refresh }: { settings: SettingsRow | null; re
   const startOAuth = useServerFn(startMelhorEnvioOAuth);
   const disconnect = useServerFn(disconnectMelhorEnvioConnection);
   const getShippingStatus = useServerFn(getMelhorEnvioConnectionStatus);
+  const getConfigurationStatus = useServerFn(getMelhorEnvioConfigurationStatus);
   const [busy, setBusy] = useState(false);
   const [connectionBusy, setConnectionBusy] = useState(false);
   const connection = useQuery({ queryKey: ["melhor-envio-status"], queryFn: () => getShippingStatus(), staleTime: 30_000 });
+  const configuration = useQuery({ queryKey: ["melhor-envio-configuration"], queryFn: () => getConfigurationStatus(), staleTime: 30_000 });
   const currentSettings = settings;
 
   useEffect(() => {
@@ -296,6 +298,21 @@ function StoreSettings({ settings, refresh }: { settings: SettingsRow | null; re
           {connected && <Button type="button" variant="outline" onClick={disconnectMelhorEnvio} disabled={connectionBusy}>Desconectar</Button>}
         </div>
         {connection.data?.expiresAt && connected && <p className="mt-3 text-xs text-muted-foreground">O acesso é renovado automaticamente antes de expirar.</p>}
+        {configuration.data && (
+          <details className="mt-5 rounded-md border border-border bg-muted/30 p-4 text-sm">
+            <summary className="cursor-pointer font-medium">Diagnóstico da configuração</summary>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <p><span className="text-muted-foreground">Ambiente:</span> {configuration.data.environment === "production" ? "Produção" : "Sandbox"}</p>
+              <p><span className="text-muted-foreground">Client ID:</span> {configuration.data.clientIdMasked}</p>
+              <p><span className="text-muted-foreground">Client Secret:</span> {configuration.data.clientSecretConfigured ? `configurado (${configuration.data.clientSecretLength} caracteres)` : "AUSENTE"}</p>
+              <p><span className="text-muted-foreground">Fingerprint:</span> <code className="text-xs">{configuration.data.clientSecretFingerprint ?? "—"}</code></p>
+              <p className="sm:col-span-2 break-all"><span className="text-muted-foreground">Callback usado pelo site:</span> <code className="text-xs">{configuration.data.redirectUri}</code></p>
+              <p className="sm:col-span-2"><span className="text-muted-foreground">Callback válido:</span> {configuration.data.redirectUriValid ? "sim" : "não"}</p>
+              <p className="sm:col-span-2 break-all"><span className="text-muted-foreground">Token endpoint:</span> <code className="text-xs">{configuration.data.tokenUrl}</code></p>
+              <p className="sm:col-span-2 text-xs text-muted-foreground">O Client Secret nunca é exibido. Para o erro <code>invalid_client</code>, compare o ambiente, o Client ID, o Secret configurado no servidor e o callback cadastrado no aplicativo do Melhor Envio.</p>
+            </div>
+          </details>
+        )}
       </section>
       <section className="rounded-lg border border-border bg-surface p-5"><h2 className="font-semibold">Textos legais</h2><div className="mt-4 grid gap-4"><Field label="Política de privacidade"><Textarea name="privacy_policy" rows={7} defaultValue={settings.privacy_policy}/></Field><Field label="Termos"><Textarea name="terms" rows={7} defaultValue={settings.terms}/></Field></div></section>
       <Button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar configurações"}</Button>
