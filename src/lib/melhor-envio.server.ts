@@ -4,6 +4,7 @@ import {
   createHmac,
   randomBytes,
   timingSafeEqual,
+  createHash,
 } from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -101,6 +102,41 @@ function redirectUri(): string {
   return requiredEnv("MELHOR_ENVIO_REDIRECT_URI");
 }
 
+export function getMelhorEnvioConfiguration(): {
+  environment: "production" | "sandbox";
+  clientId: string;
+  clientIdMasked: string;
+  clientSecretConfigured: boolean;
+  clientSecretLength: number;
+  clientSecretFingerprint: string | null;
+  redirectUri: string;
+  redirectUriValid: boolean;
+  tokenUrl: string;
+  authorizeUrl: string;
+  userAgent: string;
+} {
+  const clientId = requiredEnv("MELHOR_ENVIO_CLIENT_ID").trim();
+  const secret = process.env["MELHOR_ENVIO_CLIENT_SECRET"]?.trim() ?? "";
+  const callback = redirectUri().trim();
+  const environment = AUTHORIZE_URL.includes("sandbox.") ? "sandbox" : "production";
+  const clientIdMasked = clientId.length > 4
+    ? `${clientId.slice(0, 2)}••••${clientId.slice(-2)}`
+    : "••••";
+  return {
+    environment,
+    clientId,
+    clientIdMasked,
+    clientSecretConfigured: secret.length > 0,
+    clientSecretLength: secret.length,
+    clientSecretFingerprint: secret ? createHash("sha256").update(secret).digest("hex").slice(0, 12) : null,
+    redirectUri: callback,
+    redirectUriValid: /^https:\/\//.test(callback) && !/[?#]/.test(callback),
+    tokenUrl: TOKEN_URL,
+    authorizeUrl: AUTHORIZE_URL,
+    userAgent: appUserAgent(),
+  };
+}
+
 function appUserAgent(): string {
   return process.env["MELHOR_ENVIO_USER_AGENT"] ?? "Massa do Lucao (contato@massadolucao.com.br)";
 }
@@ -189,25 +225,31 @@ export function buildMelhorEnvioAuthorizationUrl(userId: string): string {
 
 export async function exchangeAuthorizationCode(code: string, state: string): Promise<void> {
   const { userId } = verifyOAuthState(state);
-  const token = await requestToken(new URLSearchParams({
+  try {
+    const token = await requestToken(new URLSearchParams({
     grant_type: "authorization_code",
     client_id: requiredEnv("MELHOR_ENVIO_CLIENT_ID"),
     client_secret: requiredEnv("MELHOR_ENVIO_CLIENT_SECRET"),
     redirect_uri: redirectUri(),
     code,
-  }));
-  const refreshToken = token.refresh_token;
-  if (!refreshToken) throw new Error("O Melhor Envio não retornou refresh token.");
+    }));
+    const refreshToken = token.refresh_token;
+    if (!refreshToken) throw new Error("O Melhor Envio não retornou refresh token.");
 
-  await saveConnection({
-    status: "connected",
-    access_token_encrypted: encrypt(token.access_token),
-    refresh_token_encrypted: encrypt(refreshToken),
-    access_token_expires_at: tokenExpiresAt(token.access_token, token.expires_in),
-    refresh_token_expires_at: refreshExpiresAt(refreshToken, null, true),
-    connected_by: userId,
-    last_error: null,
-  });
+    await saveConnection({
+      status: "connected",
+      access_token_encrypted: encrypt(token.access_token),
+      refresh_token_encrypted: encrypt(refreshToken),
+      access_token_expires_at: tokenExpiresAt(token.access_token, token.expires_in),
+      refresh_token_expires_at: refreshExpiresAt(refreshToken, null, true),
+      connected_by: userId,
+      last_error: null,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha ao trocar o código OAuth.";
+    await saveConnection({ status: "error", last_error: message.slice(0, 500) });
+    throw error;
+  }
 }
 
 export async function refreshMelhorEnvioToken(): Promise<string> {
