@@ -208,6 +208,24 @@
   backdrop-filter: blur(12px);
 }
 
+@media (max-width: 767px) {
+  /* No celular, o fundo fica estático para não disputar CPU/GPU com a rolagem. */
+  .drift {
+    animation: none;
+    transform: none !important;
+    filter: none;
+    background-image:
+      radial-gradient(ellipse 65% 16% at 20% 25%, rgba(255, 255, 255, 0.04) 0 1px, transparent 45%),
+      radial-gradient(ellipse 55% 14% at 75% 65%, rgba(184, 230, 47, 0.025) 0 1px, transparent 48%);
+    background-size: 520px 260px, 680px 340px;
+  }
+
+  body,
+  main {
+    touch-action: pan-y;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
