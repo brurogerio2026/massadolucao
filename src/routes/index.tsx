@@ -229,14 +229,14 @@ function Home() {
                   Ver todos os detalhes do produto
                 </Link>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <img
                   src={settings?.pot_section_image_1_url ?? linhaImg}
                   alt="Linha de pesca sobre a água ao amanhecer"
                   loading="lazy"
                   width={944}
                   height={704}
-                  className="w-full rounded-xl object-cover ring-1 ring-border"
+                  className="h-full min-h-0 w-full rounded-xl object-cover ring-1 ring-border"
                 />
                 <img
                   src={settings?.pot_section_image_2_url ?? tilapiaImg}
@@ -244,7 +244,7 @@ function Home() {
                   loading="lazy"
                   width={944}
                   height={704}
-                  className="w-full rounded-xl object-cover ring-1 ring-border"
+                  className="h-full min-h-0 w-full rounded-xl object-cover ring-1 ring-border"
                 />
               </div>
             </div>
