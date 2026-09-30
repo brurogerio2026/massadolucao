@@ -481,9 +481,9 @@ export type Database = {
           is_active: boolean
           min_quantity: number
           name: string
-          package_height_cm: number
-          package_length_cm: number
-          package_width_cm: number
+          package_height_cm: number | null
+          package_length_cm: number | null
+          package_width_cm: number | null
           price: number
           sale_price: number | null
           shipping_info: string
@@ -508,9 +508,9 @@ export type Database = {
           is_active?: boolean
           min_quantity?: number
           name: string
-          package_height_cm?: number
-          package_length_cm?: number
-          package_width_cm?: number
+          package_height_cm?: number | null
+          package_length_cm?: number | null
+          package_width_cm?: number | null
           price?: number
           sale_price?: number | null
           shipping_info?: string
@@ -535,9 +535,9 @@ export type Database = {
           is_active?: boolean
           min_quantity?: number
           name?: string
-          package_height_cm?: number
-          package_length_cm?: number
-          package_width_cm?: number
+          package_height_cm?: number | null
+          package_length_cm?: number | null
+          package_width_cm?: number | null
           price?: number
           sale_price?: number | null
           shipping_info?: string
