@@ -81,7 +81,7 @@ export const createCheckout = createServerFn({ method: "POST" })
     if (!selectedShipping) throw new Error("A opção de frete escolhida não está mais disponível. Calcule novamente.");
     const shipping = selectedShipping.price;
 
-    // 2. Cupom (opcional)
+    // 2. Cupom (opcional). O desconto fica registrado no pedido.
     let discount = 0;
     let couponCode: string | null = null;
     const rawCoupon = data.couponCode?.trim().toUpperCase();
@@ -111,7 +111,7 @@ export const createCheckout = createServerFn({ method: "POST" })
     const total = Number((subtotal + shipping - discount).toFixed(2));
 
     // 3. Cliente + pedido
-    const { data: customer } = await supabaseAdmin
+    const { data: customer, error: customerError } = await supabaseAdmin
       .from("customers")
       .insert({
         full_name: data.customer.full_name,
@@ -121,11 +121,12 @@ export const createCheckout = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
+    if (customerError || !customer) throw new Error("Não foi possível registrar os dados do cliente.");
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
-        customer_id: customer?.id ?? null,
+        customer_id: customer.id,
         customer_name: data.customer.full_name,
         customer_email: data.customer.email,
         customer_phone: data.customer.phone,
@@ -154,7 +155,7 @@ export const createCheckout = createServerFn({ method: "POST" })
       .single();
     if (orderError || !order) throw new Error("Não foi possível registrar o pedido.");
 
-    await supabaseAdmin.from("order_items").insert(
+    const { error: orderItemsError } = await supabaseAdmin.from("order_items").insert(
       lines.map((l) => ({
         order_id: order.id,
         product_id: l.product_id,
@@ -164,17 +165,45 @@ export const createCheckout = createServerFn({ method: "POST" })
         total: l.total,
       })),
     );
+    if (orderItemsError) throw new Error("Não foi possível registrar os itens do pedido.");
 
     // 4. Mercado Pago
     const origin = requestOrigin();
-    const preferenceBody = {
-      items: lines.map((l) => ({
-        id: l.product_id,
-        title: l.product_name,
-        quantity: l.quantity,
-        unit_price: l.unit_price,
+
+    // O Checkout Pro não possui um campo de desconto monetário separado.
+    // Para cupons, distribuímos o desconto proporcionalmente entre os itens,
+    // preservando o frete e o total do pedido. Sem cupom, os preços originais são usados.
+    let discountRemaining = Math.round(discount * 100);
+    const preferenceItems = lines.map((line, index) => {
+      const lineCents = Math.round(line.total * 100);
+      const applied = index === lines.length - 1
+        ? Math.min(discountRemaining, lineCents)
+        : Math.min(discountRemaining, lineCents);
+      discountRemaining -= applied;
+      const adjustedLineCents = lineCents - applied;
+      const unitCents = Math.max(0, Math.round(adjustedLineCents / line.quantity));
+      return {
+        id: line.product_id,
+        title: line.product_name,
+        quantity: line.quantity,
+        unit_price: unitCents / 100,
         currency_id: "BRL",
-      })),
+      };
+    });
+
+    // If quantity rounding prevented an exact representation of the coupon,
+    // reject instead of charging a value different from the order total.
+    const preferenceItemsTotal = preferenceItems.reduce(
+      (sum, item) => sum + Math.round(item.unit_price * 100) * item.quantity,
+      0,
+    );
+    const expectedItemsTotal = Math.round((subtotal - discount) * 100);
+    if (preferenceItemsTotal !== expectedItemsTotal) {
+      throw new Error("O cupom não pode ser aplicado com precisão a este pedido. Remova o cupom e tente novamente.");
+    }
+
+    const preferenceBody = {
+      items: preferenceItems,
       payer: {
         name: data.customer.full_name,
         email: data.customer.email,
