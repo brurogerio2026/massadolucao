@@ -5,6 +5,7 @@ import {
   buildMelhorEnvioAuthorizationUrl,
   disconnectMelhorEnvio,
   getMelhorEnvioStatus,
+  getMelhorEnvioConfiguration,
 } from "./melhor-envio.server";
 
 async function requireAdmin(context: { supabase: any; userId: string }) {
@@ -20,6 +21,26 @@ export const startMelhorEnvioOAuth = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await requireAdmin(context);
     return { url: buildMelhorEnvioAuthorizationUrl(context.userId) };
+  });
+
+
+export const getMelhorEnvioConfigurationStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireAdmin(context);
+    const config = getMelhorEnvioConfiguration();
+    return {
+      environment: config.environment,
+      clientIdMasked: config.clientIdMasked,
+      clientSecretConfigured: config.clientSecretConfigured,
+      clientSecretLength: config.clientSecretLength,
+      clientSecretFingerprint: config.clientSecretFingerprint,
+      redirectUri: config.redirectUri,
+      redirectUriValid: config.redirectUriValid,
+      tokenUrl: config.tokenUrl,
+      authorizeUrl: config.authorizeUrl,
+      userAgent: config.userAgent,
+    };
   });
 
 export const getMelhorEnvioConnectionStatus = createServerFn({ method: "GET" })
