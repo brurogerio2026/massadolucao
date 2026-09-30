@@ -5,7 +5,7 @@ export function MobileBuyBar() {
   const { count, setOpen } = useCart();
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/90 p-3 backdrop-blur-xl md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/95 p-3 md:hidden md:backdrop-blur-xl">
       <button
         type="button"
         onClick={() => setOpen(true)}
