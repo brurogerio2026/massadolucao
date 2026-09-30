@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { getAdminData, saveProduct, deleteProduct, saveVariant, deleteVariant, updateOrder, saveSettings, saveContent, deleteContent, uploadAdminAsset } from "@/lib/admin.functions";
 import { disconnectMelhorEnvioConnection, getMelhorEnvioConnectionStatus, getMelhorEnvioConfigurationStatus, startMelhorEnvioOAuth } from "@/lib/melhor-envio.functions";
+import { getMercadoPagoConnectionStatus, saveMercadoPagoCredentials, disconnectMercadoPagoConnection } from "@/lib/mercadopago.functions";
 import { formatBRL, formatDateBR } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
