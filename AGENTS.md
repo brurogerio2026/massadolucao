@@ -9,3 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - All admin reads and mutations go through authenticated server functions that verify the `admin` role; route visibility is not the security boundary.
+- Shipping prices are recalculated server-side with Melhor Envio during checkout; browser-selected prices are never trusted.
