@@ -1,14 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useCart } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
-import { settingsQuery } from "@/lib/store-queries";
-import { calcShipping } from "@/lib/shipping";
 import { createCheckout } from "@/lib/checkout.functions";
+import { ShippingCalculator } from "@/components/site/ShippingCalculator";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -41,9 +40,8 @@ const fields = [
 ] as const;
 
 function CheckoutPage() {
-  const { items, subtotal, clear } = useCart();
-  const { data: settings } = useQuery(settingsQuery);
-  const shipping = calcShipping(subtotal, settings ?? null);
+  const { items, subtotal, clear, shipping, setShipping } = useCart();
+  const shippingItems = items.map((item) => ({ productId: item.productId, quantity: item.quantity }));
   const navigate = useNavigate();
   const submitCheckout = useServerFn(createCheckout);
   const [loading, setLoading] = useState(false);
@@ -55,6 +53,7 @@ function CheckoutPage() {
       toast.error("Seu carrinho está vazio.");
       return;
     }
+    if (!shipping) { toast.error("Calcule e escolha uma opção de frete."); return; }
     const formData = new FormData(event.currentTarget);
     const customer = Object.fromEntries(
       fields.map((f) => [f.name, String(formData.get(f.name) ?? "").trim()]),
@@ -68,6 +67,7 @@ function CheckoutPage() {
           customer: customer as never,
           items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
           couponCode: coupon || null,
+          shipping: { id: shipping.id, destinationZip: shipping.destinationZip },
         },
       });
       clear();
@@ -105,6 +105,7 @@ function CheckoutPage() {
                   type={f.type}
                   required={f.required}
                   maxLength={160}
+                  defaultValue={f.name === "zip_code" ? shipping?.destinationZip ?? "" : ""}
                   className="mt-1 w-full rounded-xl bg-background px-3 py-2 text-sm ring-1 ring-border outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
@@ -126,6 +127,7 @@ function CheckoutPage() {
                 </div>
               ))}
             </div>
+            <ShippingCalculator items={shippingItems} initialZip={shipping?.destinationZip} selected={shipping} onSelect={setShipping} />
             <label className="mt-4 block text-sm">
               <span className="text-muted-foreground">Cupom de desconto</span>
               <input
@@ -142,20 +144,20 @@ function CheckoutPage() {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Frete</span>
-                <span>{shipping === 0 ? "Grátis" : formatBRL(shipping)}</span>
+                <span>{shipping ? `${shipping.company} · ${shipping.price === 0 ? "Grátis" : formatBRL(shipping.price)}` : "Escolha uma opção"}</span>
               </div>
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary">{formatBRL(subtotal + shipping)}</span>
+                <span className="text-primary">{formatBRL(subtotal + (shipping?.price ?? 0))}</span>
               </div>
             </div>
-            <button
+            <Button
               type="submit"
-              disabled={loading || items.length === 0}
-              className="mt-5 w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              disabled={loading || items.length === 0 || !shipping}
+              className="mt-5 w-full rounded-full py-3"
             >
               {loading ? "Processando…" : "Pagar com Mercado Pago"}
-            </button>
+            </Button>
             <p className="mt-2 text-center text-xs text-muted-foreground">
               Cartão, Pix e demais formas disponíveis na conta do Mercado Pago.
             </p>

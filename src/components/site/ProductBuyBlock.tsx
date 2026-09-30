@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
 import { priceOf, type Product } from "@/lib/store-queries";
+import { ShippingCalculator } from "./ShippingCalculator";
+import { Button } from "@/components/ui/button";
 
 export function ProductBuyBlock({ product }: { product: Product }) {
   const { add, setOpen } = useCart();
@@ -69,15 +71,16 @@ export function ProductBuyBlock({ product }: { product: Product }) {
             <Plus className="size-4" />
           </button>
         </div>
-        <button
+        <Button
           type="button"
+          variant="secondary"
           disabled={!inStock}
           onClick={addToCart}
-          className="rounded-full bg-surface px-6 py-2.5 text-sm font-semibold ring-1 ring-border transition-colors hover:bg-surface-strong disabled:opacity-40"
+          className="rounded-full"
         >
           Adicionar ao carrinho
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           disabled={!inStock}
           onClick={() => {
@@ -85,11 +88,12 @@ export function ProductBuyBlock({ product }: { product: Product }) {
             setOpen(false);
             void navigate({ to: "/checkout" });
           }}
-          className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground ring-1 ring-primary/40 transition-colors hover:bg-primary/90 disabled:opacity-40"
+          className="rounded-full"
         >
           COMPRAR AGORA
-        </button>
+        </Button>
       </div>
+      <ShippingCalculator items={[{ productId: product.id, quantity: qty }]} />
     </div>
   );
 }

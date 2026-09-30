@@ -19,6 +19,7 @@ const productSchema = z.object({
   short_description: z.string().trim().max(300).default(""), description: z.string().trim().max(8000).default(""),
   price: z.number().min(0), sale_price: z.number().min(0).nullable(), stock: z.number().int().min(0),
   sku: nullableText, weight_grams: z.number().int().min(0).nullable(), category: nullableText, dimensions: nullableText,
+  package_width_cm: z.number().positive().nullable(), package_height_cm: z.number().positive().nullable(), package_length_cm: z.number().positive().nullable(),
   shipping_info: z.string().max(2000).default(""), usage_info: z.string().max(4000).default(""),
   min_quantity: z.number().int().min(1).default(1), image_url: nullableText,
   gallery: z.array(z.string().max(2000)).default([]), benefits: z.array(z.string().max(500)).default([]),
@@ -38,7 +39,7 @@ const settingsSchema = z.object({
   whatsapp: nullableText, whatsapp_message: z.string().max(500), instagram: nullableText,
   email: z.string().email().nullable().or(z.literal("")), address: nullableText, logo_url: nullableText, favicon_url: nullableText,
   about_title: z.string().max(200), about_text: z.string().max(8000), about_image_url: nullableText,
-  flat_shipping_rate: z.number().min(0), free_shipping_enabled: z.boolean(), free_shipping_min: z.number().min(0).nullable(),
+  flat_shipping_rate: z.number().min(0), free_shipping_enabled: z.boolean(), free_shipping_min: z.number().min(0).nullable(), shipping_origin_zip: z.string().regex(/^\d{8}$/),
   privacy_policy: z.string().max(20000), terms: z.string().max(20000),
 });
 const contentTables = ["banners", "testimonials", "faqs", "gallery_images", "benefits", "usage_steps", "coupons"] as const;

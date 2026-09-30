@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { calcShipping } from "./shipping";
 
 const checkoutSchema = z.object({
   customer: z.object({
@@ -26,6 +25,7 @@ const checkoutSchema = z.object({
     .min(1)
     .max(30),
   couponCode: z.string().max(40).optional().nullable(),
+  shipping: z.object({ id: z.string().min(1).max(40), destinationZip: z.string().regex(/^\d{8}$/) }),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
@@ -44,12 +44,15 @@ export const createCheckout = createServerFn({ method: "POST" })
       throw new Error("O pagamento ainda está sendo configurado. Tente novamente em breve.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.customer.zip_code.replace(/\D/g, "") !== data.shipping.destinationZip) {
+      throw new Error("O CEP do endereço mudou. Calcule o frete novamente.");
+    }
 
     // 1. Preços e estoque sempre vêm do banco, nunca do navegador.
     const ids = data.items.map((i) => i.productId);
     const { data: products, error: productsError } = await supabaseAdmin
       .from("products")
-      .select("id, name, price, sale_price, stock, is_active, image_url")
+      .select("id, name, price, sale_price, stock, is_active, image_url, weight_grams, package_width_cm, package_height_cm, package_length_cm")
       .in("id", ids);
     if (productsError) throw new Error("Não foi possível carregar os produtos.");
 
@@ -72,12 +75,11 @@ export const createCheckout = createServerFn({ method: "POST" })
 
     const subtotal = Number(lines.reduce((s, l) => s + l.total, 0).toFixed(2));
 
-    const { data: settings } = await supabaseAdmin
-      .from("store_settings")
-      .select("free_shipping_enabled, flat_shipping_rate, free_shipping_min")
-      .limit(1)
-      .maybeSingle();
-    const shipping = calcShipping(subtotal, settings ?? null);
+    const { quoteShipping } = await import("./shipping.server");
+    const quote = await quoteShipping(supabaseAdmin, data.shipping.destinationZip, data.items);
+    const selectedShipping = quote.options.find((option) => option.id === data.shipping.id);
+    if (!selectedShipping) throw new Error("A opção de frete escolhida não está mais disponível. Calcule novamente.");
+    const shipping = selectedShipping.price;
 
     // 2. Cupom (opcional)
     let discount = 0;
@@ -137,6 +139,10 @@ export const createCheckout = createServerFn({ method: "POST" })
         state: data.customer.state,
         subtotal,
         shipping,
+        shipping_service_id: selectedShipping.id,
+        shipping_service_name: selectedShipping.name,
+        shipping_company_name: selectedShipping.company,
+        shipping_delivery_days: selectedShipping.deliveryDays,
         discount,
         total,
         coupon_code: couponCode,

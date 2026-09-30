@@ -1,11 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useCart } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
-import { settingsQuery } from "@/lib/store-queries";
-import { calcShipping } from "@/lib/shipping";
+import { ShippingCalculator } from "@/components/site/ShippingCalculator";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/carrinho")({
   head: () => ({
@@ -24,9 +23,8 @@ export const Route = createFileRoute("/carrinho")({
 });
 
 function CarrinhoPage() {
-  const { items, setQuantity, remove, subtotal } = useCart();
-  const { data: settings } = useQuery(settingsQuery);
-  const shipping = calcShipping(subtotal, settings ?? null);
+  const { items, setQuantity, remove, subtotal, shipping, setShipping } = useCart();
+  const shippingItems = items.map((item) => ({ productId: item.productId, quantity: item.quantity }));
 
   return (
     <SiteLayout>
@@ -64,19 +62,21 @@ function CarrinhoPage() {
                     <p className="text-sm text-muted-foreground">{formatBRL(item.price)}</p>
                   </div>
                   <div className="flex items-center overflow-hidden rounded-full bg-background ring-1 ring-border">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label="Diminuir"
-                      className="px-3 py-2"
                       onClick={() => setQuantity(item.productId, item.variantId, item.quantity - 1)}
                     >
                       <Minus className="size-4" />
-                    </button>
+                    </Button>
                     <span className="w-8 text-center text-sm">{item.quantity}</span>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label="Aumentar"
-                      className="px-3 py-2"
                       onClick={() =>
                         setQuantity(
                           item.productId,
@@ -86,40 +86,43 @@ function CarrinhoPage() {
                       }
                     >
                       <Plus className="size-4" />
-                    </button>
+                    </Button>
                   </div>
                   <p className="w-24 text-right font-semibold">
                     {formatBRL(item.price * item.quantity)}
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     aria-label="Remover"
                     onClick={() => remove(item.productId, item.variantId)}
                     className="text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="size-4" />
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
 
             <div className="mt-6 rounded-2xl bg-surface p-5 ring-1 ring-border">
+              <ShippingCalculator items={shippingItems} initialZip={shipping?.destinationZip} selected={shipping} onSelect={setShipping} />
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
                 <span>{formatBRL(subtotal)}</span>
               </div>
               <div className="mt-2 flex justify-between text-sm text-muted-foreground">
                 <span>Frete</span>
-                <span>{shipping === 0 ? "Grátis" : formatBRL(shipping)}</span>
+                <span>{shipping ? (shipping.price === 0 ? "Grátis" : formatBRL(shipping.price)) : "Calcule pelo CEP"}</span>
               </div>
               <div className="mt-3 flex justify-between border-t border-border pt-3 text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary">{formatBRL(subtotal + shipping)}</span>
+                <span className="text-primary">{formatBRL(subtotal + (shipping?.price ?? 0))}</span>
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   to="/checkout"
-                  className="flex-1 rounded-full bg-primary px-6 py-3 text-center text-sm font-semibold text-primary-foreground"
+                  className={`flex-1 rounded-full px-6 py-3 text-center text-sm font-semibold ${shipping ? "bg-primary text-primary-foreground" : "pointer-events-none bg-muted text-muted-foreground"}`}
                 >
                   Finalizar compra
                 </Link>

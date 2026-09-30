@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { shippingCartKey, type ShippingSelection } from "./shipping";
 
 export type CartItem = {
   productId: string;
@@ -22,10 +23,13 @@ type CartContextValue = {
   clear: () => void;
   open: boolean;
   setOpen: (open: boolean) => void;
+  shipping: ShippingSelection | null;
+  setShipping: (shipping: ShippingSelection | null) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "mdl-cart-v1";
+const SHIPPING_STORAGE_KEY = "mdl-shipping-v1";
 
 const sameLine = (a: CartItem, productId: string, variantId?: string | null) =>
   a.productId === productId && (a.variantId ?? null) === (variantId ?? null);
@@ -33,11 +37,14 @@ const sameLine = (a: CartItem, productId: string, variantId?: string | null) =>
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [shipping, setShippingState] = useState<ShippingSelection | null>(null);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setItems(JSON.parse(raw) as CartItem[]);
+      const savedShipping = localStorage.getItem(SHIPPING_STORAGE_KEY);
+      if (savedShipping) setShippingState(JSON.parse(savedShipping) as ShippingSelection);
     } catch {
       /* carrinho vazio */
     }
@@ -50,6 +57,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /* ignora */
     }
   }, [items]);
+
+  const setShipping = useCallback((value: ShippingSelection | null) => { setShippingState(value); try { if (value) localStorage.setItem(SHIPPING_STORAGE_KEY, JSON.stringify(value)); else localStorage.removeItem(SHIPPING_STORAGE_KEY); } catch { /* ignora */ } }, []);
 
   const add = useCallback((item: Omit<CartItem, "quantity">, quantity = 1) => {
     setItems((prev) => {
@@ -80,13 +89,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.filter((i) => !sameLine(i, productId, variantId)));
   }, []);
 
-  const clear = useCallback(() => setItems([]), []);
+  const clear = useCallback(() => { setItems([]); setShipping(null); }, [setShipping]);
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((sum, i) => sum + i.quantity, 0);
     const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    return { items, count, subtotal, add, setQuantity, remove, clear, open, setOpen };
-  }, [items, add, setQuantity, remove, clear, open]);
+    const validShipping = shipping?.cartKey === shippingCartKey(items) ? shipping : null;
+    return { items, count, subtotal, add, setQuantity, remove, clear, open, setOpen, shipping: validShipping, setShipping };
+  }, [items, add, setQuantity, remove, clear, open, shipping, setShipping]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

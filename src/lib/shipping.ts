@@ -4,6 +4,11 @@ export type ShippingSettings = {
   free_shipping_min: number | string | null;
 } | null;
 
+export type ShippingQuoteItem = { productId: string; quantity: number };
+export type ShippingOption = { id: string; name: string; company: string; companyPicture: string | null; price: number; deliveryDays: number };
+export type ShippingSelection = ShippingOption & { destinationZip: string; cartKey: string };
+export function shippingCartKey(items: ShippingQuoteItem[]) { return [...items].sort((a, b) => a.productId.localeCompare(b.productId)).map((item) => `${item.productId}:${item.quantity}`).join("|"); }
+
 /** Regras de frete configuráveis no painel: frete grátis geral,
  *  frete grátis acima de um valor mínimo, ou frete fixo. */
 export function calcShipping(subtotal: number, settings: ShippingSettings): number {
