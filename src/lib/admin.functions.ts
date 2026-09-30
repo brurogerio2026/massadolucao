@@ -38,7 +38,7 @@ const settingsSchema = z.object({
   id: z.string().uuid(), store_name: z.string().trim().min(2).max(120), store_description: z.string().max(500),
   whatsapp: nullableText, whatsapp_message: z.string().max(500), instagram: nullableText,
   email: z.string().email().nullable().or(z.literal("")), address: nullableText, logo_url: nullableText, favicon_url: nullableText,
-  about_title: z.string().max(200), about_text: z.string().max(8000), about_image_url: nullableText, hero_image_url: nullableText,
+  about_title: z.string().max(200), about_text: z.string().max(8000), about_image_url: nullableText, hero_image_url: nullableText, pot_section_image_1_url: nullableText, pot_section_image_2_url: nullableText,
   flat_shipping_rate: z.number().min(0), free_shipping_enabled: z.boolean(), free_shipping_min: z.number().min(0).nullable(), shipping_origin_zip: z.string().regex(/^\d{8}$/),
   privacy_policy: z.string().max(20000), terms: z.string().max(20000),
 });
