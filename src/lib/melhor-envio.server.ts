@@ -164,8 +164,14 @@ async function requestToken(params: URLSearchParams): Promise<TokenResponse> {
   let parsed: any = null;
   try { parsed = JSON.parse(body); } catch {}
   if (!response.ok || !parsed?.access_token) {
-    console.error(`Melhor Envio OAuth failed [${response.status}]`);
-    throw new Error("Não foi possível autorizar a integração com o Melhor Envio.");
+    const providerError =
+      typeof parsed?.error_description === "string"
+        ? parsed.error_description
+        : typeof parsed?.error === "string"
+          ? parsed.error
+          : `HTTP ${response.status}`;
+    console.error(`Melhor Envio OAuth failed [${response.status}]: ${providerError}`);
+    throw new Error(providerError);
   }
   return parsed as TokenResponse;
 }
