@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useCart } from "@/lib/cart";
 import { formatBRL } from "@/lib/format";
-import { createCheckout } from "@/lib/checkout.functions";
+import { createCheckout, validateCoupon } from "@/lib/checkout.functions";
 import { ShippingCalculator } from "@/components/site/ShippingCalculator";
 import { Button } from "@/components/ui/button";
 
@@ -44,8 +44,24 @@ function CheckoutPage() {
   const shippingItems = items.map((item) => ({ productId: item.productId, quantity: item.quantity }));
   const navigate = useNavigate();
   const submitCheckout = useServerFn(createCheckout);
+  const checkCoupon = useServerFn(validateCoupon);
   const [loading, setLoading] = useState(false);
   const [coupon, setCoupon] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+
+  async function applyCoupon() {
+    const code = coupon.trim();
+    if (!code) { setCouponDiscount(0); setCouponMessage(null); return; }
+    setCheckingCoupon(true);
+    try {
+      const result = await checkCoupon({ data: { code, subtotal } });
+      setCouponDiscount(result.valid ? result.discount : 0);
+      setCouponMessage(result.message);
+    } catch { setCouponDiscount(0); setCouponMessage("Não foi possível validar o cupom."); }
+    finally { setCheckingCoupon(false); }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,23 +148,28 @@ function CheckoutPage() {
               <span className="text-muted-foreground">Cupom de desconto</span>
               <input
                 value={coupon}
-                onChange={(e) => setCoupon(e.target.value)}
+                onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponDiscount(0); setCouponMessage(null); }}
                 maxLength={40}
                 className="mt-1 w-full rounded-xl bg-background px-3 py-2 text-sm uppercase ring-1 ring-border outline-none focus:ring-2 focus:ring-ring"
               />
+              <Button type="button" variant="outline" disabled={checkingCoupon || !coupon.trim()} onClick={() => void applyCoupon()} className="mt-2 w-full">
+                {checkingCoupon ? "Validando…" : "Aplicar cupom"}
+              </Button>
+              {couponMessage && <p className={`mt-1 text-xs ${couponDiscount > 0 ? "text-primary" : "text-destructive"}`}>{couponMessage}</p>}
             </label>
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
                 <span>{formatBRL(subtotal)}</span>
               </div>
+              {couponDiscount > 0 && <div className="flex justify-between text-muted-foreground"><span>Desconto</span><span>-{formatBRL(couponDiscount)}</span></div>}
               <div className="flex justify-between text-muted-foreground">
                 <span>Frete</span>
                 <span>{shipping ? `${shipping.company} · ${shipping.price === 0 ? "Grátis" : formatBRL(shipping.price)}` : "Escolha uma opção"}</span>
               </div>
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary">{formatBRL(subtotal + (shipping?.price ?? 0))}</span>
+                <span className="text-primary">{formatBRL(subtotal + (shipping?.price ?? 0) - couponDiscount)}</span>
               </div>
             </div>
             <Button
