@@ -36,6 +36,34 @@ function requestOrigin() {
   return process.env["PUBLIC_SITE_URL"] ?? PUBLIC_ORIGIN;
 }
 
+export const validateCoupon = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ code: z.string().max(40), subtotal: z.number().min(0) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const code = data.code.trim().toUpperCase();
+    if (!code) return { valid: false, discount: 0, message: "Informe um cupom." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: coupon } = await supabaseAdmin
+      .from("coupons")
+      .select("*")
+      .eq("code", code)
+      .eq("is_active", true)
+      .maybeSingle();
+    const now = new Date();
+    const valid =
+      coupon &&
+      data.subtotal >= Number(coupon.min_order_amount ?? 0) &&
+      (!coupon.starts_at || new Date(coupon.starts_at) <= now) &&
+      (!coupon.expires_at || new Date(coupon.expires_at) >= now) &&
+      (coupon.usage_limit == null || coupon.used_count < coupon.usage_limit);
+    if (!valid || !coupon) return { valid: false, discount: 0, message: "Cupom inválido ou indisponível." };
+    const discount = coupon.discount_percent
+      ? Number(((data.subtotal * Number(coupon.discount_percent)) / 100).toFixed(2))
+      : Number(coupon.discount_amount ?? 0);
+    return { valid: true, discount: Math.min(discount, data.subtotal), message: "Cupom aplicado." };
+  });
+
 export const createCheckout = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => checkoutSchema.parse(data))
   .handler(async ({ data }) => {
@@ -99,6 +127,7 @@ export const createCheckout = createServerFn({ method: "POST" })
         (!coupon.starts_at || new Date(coupon.starts_at) <= now) &&
         (!coupon.expires_at || new Date(coupon.expires_at) >= now) &&
         (coupon.usage_limit == null || coupon.used_count < coupon.usage_limit);
+      if (rawCoupon && !valid) throw new Error("Cupom inválido ou indisponível.");
       if (valid && coupon) {
         couponCode = coupon.code;
         discount = coupon.discount_percent
