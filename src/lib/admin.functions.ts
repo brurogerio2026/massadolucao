@@ -46,7 +46,33 @@ const contentTables = ["banners", "testimonials", "faqs", "gallery_images", "ben
 type ContentTable = (typeof contentTables)[number];
 const contentPayload = z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]));
 
-\nconst dashboardStatsSchema = z.object({\n  startDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),\n  endDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),\n});\n\nexport const getDashboardStats = createServerFn({ method: "GET" })\n  .middleware([requireSupabaseAuth])\n  .inputValidator((input: unknown) => dashboardStatsSchema.parse(input ?? {}))\n  .handler(async ({ context, data }) => {\n    const db = await requireAdmin(context);\n    const applyDateRange = (query: any) => {\n      let next = query;\n      if (data.startDate) next = next.gte("created_at", data.startDate + "T00:00:00.000Z");\n      if (data.endDate) next = next.lt("created_at", data.endDate + "T23:59:59.999Z");\n      return next;\n    };\n    const base = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }));\n    const paid = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }).eq("payment_status", "approved"));\n    const pendingShipment = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }).in("order_status", ["paid", "preparing"]));\n    const shipped = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }).in("order_status", ["shipped", "delivered"]));\n    const [totalResult, paidResult, pendingResult, shippedResult] = await Promise.all([base, paid, pendingShipment, shipped]);\n    const failed = [totalResult, paidResult, pendingResult, shippedResult].find((result) => result.error);\n    if (failed?.error) throw new Error("Não foi possível carregar os indicadores do dashboard.");\n    return { totalOrders: totalResult.count ?? 0, paidOrders: paidResult.count ?? 0, pendingShipments: pendingResult.count ?? 0, shippedOrders: shippedResult.count ?? 0 };\n  });\nexport const getAdminData = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+
+const dashboardStatsSchema = z.object({
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+export const getDashboardStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => dashboardStatsSchema.parse(input ?? {}))
+  .handler(async ({ context, data }) => {
+    const db = await requireAdmin(context);
+    const applyDateRange = (query: any) => {
+      let next = query;
+      if (data.startDate) next = next.gte("created_at", data.startDate + "T00:00:00.000Z");
+      if (data.endDate) next = next.lt("created_at", data.endDate + "T23:59:59.999Z");
+      return next;
+    };
+    const base = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }));
+    const paid = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }).eq("payment_status", "approved"));
+    const pendingShipment = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }).in("order_status", ["paid", "preparing"]));
+    const shipped = applyDateRange(db.from("orders").select("id", { count: "exact", head: true }).in("order_status", ["shipped", "delivered"]));
+    const [totalResult, paidResult, pendingResult, shippedResult] = await Promise.all([base, paid, pendingShipment, shipped]);
+    const failed = [totalResult, paidResult, pendingResult, shippedResult].find((result) => result.error);
+    if (failed?.error) throw new Error("Não foi possível carregar os indicadores do dashboard.");
+    return { totalOrders: totalResult.count ?? 0, paidOrders: paidResult.count ?? 0, pendingShipments: pendingResult.count ?? 0, shippedOrders: shippedResult.count ?? 0 };
+  });
+export const getAdminData = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const db = await requireAdmin(context);
   const results = await Promise.all([
     db.from("products").select("*").order("sort_order"), db.from("product_variants").select("*").order("sort_order"),
