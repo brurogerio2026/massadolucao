@@ -98,7 +98,7 @@ function Home() {
           <div className="relative overflow-hidden rounded-[1.75rem] bg-surface p-3 ring-1 ring-border backdrop-blur-md">
             <div className="sheen absolute inset-y-0 left-0 w-1/3 skew-x-[-18deg] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
             <img
-              src={heroImg}
+              src={settings?.hero_image_url ?? heroImg}
               alt="Pote da Massa do Lucão em uma pedra à beira do lago"
               width={1024}
               height={1200}
