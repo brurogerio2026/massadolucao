@@ -79,15 +79,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Massa do Lucão — Massa para pesca de tilápia" },
+      { title: "Massa do Lucão | Massa para Pesca de Tilápia" },
       {
         name: "description",
         content:
-          "Massa do Lucão: massa especial para a pesca de tilápias, com envio para todo o Brasil.",
+          "Compre a Massa do Lucão, massa para pesca de tilápia. Conheça o produto, veja como usar e receba em todo o Brasil.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:site_name", content: "Massa do Lucão" },
+      { property: "og:locale", content: "pt_BR" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Massa do Lucão | Massa para Pesca de Tilápia" },
+      {
+        property: "og:description",
+        content: "Massa para pesca de tilápia. Conheça o produto e compre online com envio para todo o Brasil.",
+      },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Massa do Lucão | Massa para Pesca de Tilápia" },
+      {
+        name: "twitter:description",
+        content: "Massa para pesca de tilápia, com compra online e envio para todo o Brasil.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -106,7 +118,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@context": "https://schema.org",
           "@type": "Organization",
           name: "Massa do Lucão",
-          description: "Massa especial para a pesca de tilápias.",
+          url: "https://massadolucao.lovable.app/",
+          description: "Massa para pesca de tilápia, com compra online e envio para todo o Brasil.",
         }),
       },
     ],
