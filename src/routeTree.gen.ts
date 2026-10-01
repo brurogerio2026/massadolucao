@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as AcompanharPedidoRouteImport } from './routes/acompanhar-pedido'
 import { Route as ComoUsarRouteImport } from './routes/como-usar'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
@@ -42,6 +43,11 @@ const CarrinhoRoute = CarrinhoRouteImport.update({
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcompanharPedidoRoute = AcompanharPedidoRouteImport.update({
+  id: '/acompanhar-pedido',
+  path: '/acompanhar-pedido',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComoUsarRoute = ComoUsarRouteImport.update({
@@ -102,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
+  '/acompanhar-pedido': typeof AcompanharPedidoRoute
+  '/acompanhar-pedido': typeof AcompanharPedidoRoute
   '/como-usar': typeof ComoUsarRoute
   '/contato': typeof ContatoRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -153,6 +161,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/carrinho'
     | '/checkout'
+    | '/acompanhar-pedido'
+    | '/acompanhar-pedido'
     | '/como-usar'
     | '/contato'
     | '/privacidade'
@@ -202,6 +212,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   CarrinhoRoute: typeof CarrinhoRoute
   CheckoutRoute: typeof CheckoutRoute
+  AcompanharPedidoRoute: typeof AcompanharPedidoRoute
   ComoUsarRoute: typeof ComoUsarRoute
   ContatoRoute: typeof ContatoRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
@@ -235,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/carrinho'
       fullPath: '/carrinho'
       preLoaderRoute: typeof CarrinhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acompanhar-pedido': {
+      id: '/acompanhar-pedido'
+      path: '/acompanhar-pedido'
+      fullPath: '/acompanhar-pedido'
+      preLoaderRoute: typeof AcompanharPedidoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -322,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   CarrinhoRoute: CarrinhoRoute,
   CheckoutRoute: CheckoutRoute,
+  AcompanharPedidoRoute: AcompanharPedidoRoute,
   ComoUsarRoute: ComoUsarRoute,
   ContatoRoute: ContatoRoute,
   PrivacidadeRoute: PrivacidadeRoute,
