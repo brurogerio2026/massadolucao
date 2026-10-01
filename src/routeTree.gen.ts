@@ -109,7 +109,6 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
   '/acompanhar-pedido': typeof AcompanharPedidoRoute
-  '/acompanhar-pedido': typeof AcompanharPedidoRoute
   '/como-usar': typeof ComoUsarRoute
   '/contato': typeof ContatoRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -126,6 +125,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
+  '/acompanhar-pedido': typeof AcompanharPedidoRoute
   '/como-usar': typeof ComoUsarRoute
   '/contato': typeof ContatoRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -143,6 +143,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
+  '/acompanhar-pedido': typeof AcompanharPedidoRoute
   '/como-usar': typeof ComoUsarRoute
   '/contato': typeof ContatoRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -161,7 +162,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/carrinho'
     | '/checkout'
-    | '/acompanhar-pedido'
     | '/acompanhar-pedido'
     | '/como-usar'
     | '/contato'
