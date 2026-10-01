@@ -82,6 +82,12 @@ function Home() {
             >
               CONHEÇA A MASSA
             </Link>
+            <Link
+              to="/acompanhar-pedido"
+              className="rounded-full bg-background px-6 py-3 text-sm font-semibold ring-1 ring-primary/30 transition-colors hover:bg-surface-strong"
+            >
+              ACOMPANHE SEU PEDIDO
+            </Link>
           </div>
           <div className="rise mt-10 flex items-center gap-5 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
