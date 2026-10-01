@@ -22,21 +22,21 @@ import tilapiaImg from "@/assets/tilapia-salto.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Massa do Lucão — A massa especial para sua pescaria de tilápias" },
+      { title: "Massa para Pesca de Tilápia | Massa do Lucão" },
       {
         name: "description",
         content:
-          "Massa do Lucão: massa para pescar tilápia, feita para a pesca de tilápias. Compre online com envio para todo o Brasil.",
+          "Compre a Massa do Lucão, massa desenvolvida para a pesca de tilápias. Confira o produto, aprenda como usar e receba em todo o Brasil.",
       },
-      { property: "og:title", content: "Massa do Lucão — Massa para pesca de tilápia" },
+      { property: "og:title", content: "Massa para Pesca de Tilápia | Massa do Lucão" },
       {
         property: "og:description",
-        content: "Massa desenvolvida especialmente para a pesca de tilápias. Envio para todo o Brasil.",
+        content: "Conheça e compre a Massa do Lucão, massa para pesca de tilápia com envio para todo o Brasil.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: "https://massadolucao.lovable.app/" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "https://massadolucao.lovable.app/" }],
   }),
   component: Home,
 });
