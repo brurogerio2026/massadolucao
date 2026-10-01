@@ -313,7 +313,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
 export const lookupCustomerOrders = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({
-      cpf: z.string().transform((value) => value.replace(/\D/g, "")).regex(/^\d{11}$/),
+      cpf: z.string().refine((value) => /^\d{11}$/.test(value.replace(/\D/g, "")), "CPF inválido").transform((value) => value.replace(/\D/g, "")),
       email: z.string().email().max(160),
     }).parse(input),
   )
