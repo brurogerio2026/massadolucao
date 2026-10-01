@@ -308,3 +308,21 @@ export const getOrderStatus = createServerFn({ method: "GET" })
       .eq("order_id", data.orderId);
     return { order, items: items ?? [] };
   });
+
+
+export const lookupCustomerOrders = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({
+      cpf: z.string().regex(/^\\d{11}$/),
+      email: z.string().email().max(160),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: orders, error } = await supabaseAdmin.rpc("lookup_customer_orders", {
+      p_cpf: data.cpf,
+      p_email: data.email.trim().toLowerCase(),
+    });
+    if (error) throw new Error("Não foi possível consultar os pedidos.");
+    return orders ?? [];
+  });
