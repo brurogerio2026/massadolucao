@@ -53,7 +53,7 @@ function TrackOrderPage() {
     setError("");
     setOrders(null);
     try {
-      const result = await lookup({ data: { cpf: cpf.replace(/\\D/g, ""), email: email.trim() } });
+      const result = await lookup({ data: { cpf: cpf.replace(/\D/g, ""), email: email.trim() } });
       setOrders(result as typeof orders);
     } catch {
       setError("Não foi possível consultar agora. Tente novamente.");
@@ -96,7 +96,7 @@ function TrackOrderPage() {
             />
           </label>
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={loading || cpf.replace(/\\D/g, "").length !== 11 || !email.trim()} className="rounded-full px-6">
+            <Button type="submit" disabled={loading || cpf.replace(/\D/g, "").length !== 11 || !email.trim()} className="rounded-full px-6">
               {loading ? "Consultando…" : "Consultar pedido"}
             </Button>
           </div>
