@@ -14,9 +14,9 @@ export const Route = createFileRoute("/como-usar")({
       { property: "og:title", content: "Como usar a Massa do Lucão" },
       { property: "og:description", content: "Passo a passo da massa até o anzol." },
       { property: "og:type", content: "article" },
-      { property: "og:url", content: "/como-usar" },
+      { property: "og:url", content: "https://massadolucao.lovable.app/como-usar" },
     ],
-    links: [{ rel: "canonical", href: "/como-usar" }],
+    links: [{ rel: "canonical", href: "https://massadolucao.lovable.app/como-usar" }],
   }),
   component: ComoUsarPage,
 });
