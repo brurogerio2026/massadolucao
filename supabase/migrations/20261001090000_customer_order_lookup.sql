@@ -17,7 +17,7 @@ as $$
          o.tracking_code,
          o.created_at
   from public.orders o
-  where regexp_replace(coalesce(o.customer_cpf, ''), '\\D', '', 'g') = regexp_replace(coalesce(p_cpf, ''), '\\D', '', 'g')
+  where regexp_replace(coalesce(o.customer_cpf, ''), '[^0-9]', '', 'g') = regexp_replace(coalesce(p_cpf, ''), '[^0-9]', '', 'g')
     and lower(trim(o.customer_email)) = lower(trim(p_email))
   order by o.created_at desc
   limit 10;
