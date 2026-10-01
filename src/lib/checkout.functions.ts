@@ -319,7 +319,7 @@ export const lookupCustomerOrders = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: orders, error } = await supabaseAdmin.rpc("lookup_customer_orders", {
+    const { data: orders, error } = await (supabaseAdmin as any).rpc("lookup_customer_orders", {
       p_cpf: data.cpf,
       p_email: data.email.trim().toLowerCase(),
     });
