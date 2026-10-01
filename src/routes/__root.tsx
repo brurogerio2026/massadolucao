@@ -86,6 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Compre a Massa do Lucão, massa para pesca de tilápia. Conheça o produto, veja como usar e receba em todo o Brasil.",
       },
       { name: "robots", content: "index, follow, max-image-preview:large" },
+      { name: "google-site-verification", content: "2Nh8xeIPCilTTevLM7JpBZpaplZj0txtS2pghgkSPpM" },
       { property: "og:site_name", content: "Massa do Lucão" },
       { property: "og:locale", content: "pt_BR" },
       { property: "og:type", content: "website" },
