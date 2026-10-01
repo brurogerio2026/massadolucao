@@ -15,9 +15,9 @@ export const Route = createFileRoute("/sobre")({
       { property: "og:title", content: "Sobre a Massa do Lucão" },
       { property: "og:description", content: "A história e a proposta da Massa do Lucão." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/sobre" },
+      { property: "og:url", content: "https://massadolucao.lovable.app/sobre" },
     ],
-    links: [{ rel: "canonical", href: "/sobre" }],
+    links: [{ rel: "canonical", href: "https://massadolucao.lovable.app/sobre" }],
   }),
   component: SobrePage,
 });
