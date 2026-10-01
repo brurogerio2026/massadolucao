@@ -97,13 +97,17 @@ function Home() {
           <div className="floaty absolute -left-5 bottom-8 h-16 w-16 rounded-full bg-primary/25 blur-lg" />
           <div className="relative overflow-hidden rounded-[1.75rem] bg-surface p-3 ring-1 ring-border backdrop-blur-md">
             <div className="sheen absolute inset-y-0 left-0 w-1/3 skew-x-[-18deg] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-            <img
-              src={settings?.hero_image_url ?? heroImg}
-              alt="Pote da Massa do Lucão em uma pedra à beira do lago"
-              width={1024}
-              height={1200}
-              className="relative aspect-[4/5] w-full rounded-[1.25rem] object-cover"
-            />
+            {settings && (
+              <img
+                src={settings.hero_image_url || heroImg}
+                alt="Pote da Massa do Lucão em uma pedra à beira do lago"
+                width={1024}
+                height={1200}
+                fetchPriority="high"
+                decoding="async"
+                className="relative aspect-[4/5] w-full rounded-[1.25rem] object-cover"
+              />
+            )}
             <div className="mt-3 flex items-center justify-between rounded-xl bg-background/60 px-4 py-3 ring-1 ring-border">
               <div>
                 <p className="font-display text-lg uppercase tracking-wide">
