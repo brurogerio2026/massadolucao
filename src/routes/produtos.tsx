@@ -16,9 +16,9 @@ export const Route = createFileRoute("/produtos")({
       { property: "og:title", content: "Produtos — Massa do Lucão" },
       { property: "og:description", content: "Massa para pesca de tilápia, direto de quem pesca." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/produtos" },
+      { property: "og:url", content: "https://massadolucao.lovable.app/produtos" },
     ],
-    links: [{ rel: "canonical", href: "/produtos" }],
+    links: [{ rel: "canonical", href: "https://massadolucao.lovable.app/produtos" }],
   }),
   component: ProductsPage,
 });
